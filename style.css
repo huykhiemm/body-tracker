@@ -1,0 +1,510 @@
+/* ==========================================================================
+   Design System & Custom Properties
+   ========================================================================== */
+:root {
+    --bg-primary: #0a0a0c;
+    --bg-secondary: #121216;
+    --bg-tertiary: #1a1a22;
+    
+    --accent-color: #6366f1;
+    --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    --accent-glow: rgba(99, 102, 241, 0.15);
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    --border-color: #262630;
+    --border-hover: #3b3b4f;
+    
+    --success: #10b981;
+    --success-bg: rgba(16, 185, 129, 0.1);
+    
+    --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    
+    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   Reset & Base Styles
+   ========================================================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+/* ==========================================================================
+   Layout & Dashboard Container
+   ========================================================================== */
+.dashboard-container {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+/* Header */
+.dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logo-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    box-shadow: 0 0 12px var(--accent-color);
+}
+
+.dashboard-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Content Area */
+.dashboard-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+/* ==========================================================================
+   Metrics Grid & Cards
+   ========================================================================== */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+}
+
+.metric-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+}
+
+.metric-card h3 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+
+.metric-card .value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+}
+
+.metric-card .unit {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.metric-card .divider {
+    color: var(--text-muted);
+    margin: 0 0.2rem;
+}
+
+.metric-card .trend {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.metric-card .trend.positive {
+    color: var(--success);
+}
+
+/* ==========================================================================
+   Interactive Tracker Section
+   ========================================================================== */
+.tracker-section {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+/* Buttons */
+.btn {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-primary {
+    background: var(--accent-gradient);
+    color: var(--text-primary);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    filter: brightness(1.1);
+}
+
+.btn-primary:active {
+    transform: translateY(1px);
+}
+
+/* Activity Items */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    transition: all var(--transition-fast);
+}
+
+.activity-item:hover {
+    border-color: var(--border-hover);
+    transform: translateX(4px);
+}
+
+.activity-item.loading {
+    justify-content: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    border-style: dashed;
+}
+
+.activity-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.activity-title {
+    font-weight: 500;
+}
+
+.activity-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.activity-duration {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+.dashboard-footer {
+    text-align: center;
+    margin-top: 1rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* ==========================================================================
+   Real-time Pose Tracker Styles
+   ========================================================================== */
+.pose-tracker-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background-color: var(--bg-tertiary);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #ef4444; /* Red for loading/error */
+    box-shadow: 0 0 8px #ef4444;
+    transition: all var(--transition-fast);
+}
+
+.status-dot.ready {
+    background-color: #eab308; /* Yellow for ready, waiting for camera */
+    box-shadow: 0 0 8px #eab308;
+}
+
+.status-dot.active {
+    background-color: var(--success); /* Green for streaming */
+    box-shadow: 0 0 8px var(--success);
+    animation: status-pulse 1.5s infinite alternate;
+}
+
+@keyframes status-pulse {
+    0% {
+        transform: scale(0.9);
+        box-shadow: 0 0 4px var(--success);
+    }
+    100% {
+        transform: scale(1.1);
+        box-shadow: 0 0 12px var(--success);
+    }
+}
+
+.webcam-viewport {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 4 / 3;
+    margin: 1rem auto 0 auto;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background-color: #050507;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+#webcam {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(-1); /* Mirror camera feed */
+}
+
+#pose-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transform: scaleX(-1); /* Mirror drawings to match mirrored video */
+    z-index: 2;
+}
+
+.viewport-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(10, 10, 12, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 3;
+    transition: opacity var(--transition-normal);
+}
+
+.viewport-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   AR Overlay Badges & Power Bar
+   ========================================================================== */
+.viewport-badges {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.6rem;
+    z-index: 4;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.badge-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 1.1rem;
+    background: rgba(55, 55, 60, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: none;
+    border-radius: 50px;
+    color: #f0f0f0;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+
+
+/* Power Bar Container */
+.power-bar-wrapper {
+    position: absolute;
+    right: 0.6rem;
+    top: 1rem;
+    bottom: 1rem;
+    width: 46px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 4;
+    pointer-events: none;
+}
+
+/* Percentage label sits at the top of the bar wrapper */
+.power-bar-label {
+    color: #f0f0f0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    text-align: center;
+    width: 100%;
+}
+
+.power-bar-container {
+    flex: 1;
+    width: 18px;
+    background: rgba(30, 30, 35, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 30px;
+    overflow: visible; /* allow thumb to slightly overflow */
+    position: relative;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+/* The filled track (grows from bottom) */
+.power-bar-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%;
+    background: rgba(80, 80, 90, 0.55);
+    border-radius: 30px;
+    transition: height 0.08s ease-out;
+}
+
+/* White sliding thumb indicator */
+.power-bar-thumb {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 26px;
+    height: 6px;
+    background: #e74c3c;
+    border-radius: 4px;
+    bottom: 0%;
+    transition: bottom 0.08s ease-out;
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.7);
+}
+
+/* Animations */
+@keyframes badge-flash {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        border-color: var(--success);
+    }
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 25px 5px rgba(16, 185, 129, 0.8);
+        border-color: #ffffff;
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+}
+
+.badge-pill.flash-active {
+    animation: badge-flash 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}

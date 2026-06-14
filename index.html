@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time push-up counter using MediaPipe Pose tracking. Track your reps, timer, and form directly in the browser.">
+    <title>Push-Up Tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="logo-area">
+                <div class="logo-dot"></div>
+                <h1>Tracker</h1>
+            </div>
+            <p class="subtitle">Monitor your daily activities and progress</p>
+        </header>
+
+        <main class="dashboard-content">
+            <!-- Summary Cards -->
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Focus Time</h3>
+                    <div class="value">4.2 <span class="unit">hrs</span></div>
+                    <div class="trend positive">↑ 12% today</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Tasks Completed</h3>
+                    <div class="value">8<span class="divider">/</span>12</div>
+                    <div class="trend positive">↑ 2 tasks vs yesterday</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Productivity Score</h3>
+                    <div class="value">88%</div>
+                    <div class="trend positive">High efficiency</div>
+                </div>
+            </section>
+
+            <!-- Main Interactive Section -->
+            <section class="tracker-section">
+                <div class="section-header">
+                    <h2>Recent Activities</h2>
+                    <button id="addActivityBtn" class="btn btn-primary">Add Activity</button>
+                </div>
+                
+                <div class="activity-list" id="activityList">
+                    <!-- Activities will be rendered here via script.js -->
+                    <div class="activity-item loading">
+                        <p>Initializing dashboard trackers...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Real-time Pose Tracker Section -->
+            <section class="tracker-section pose-tracker-container">
+                <div class="section-header">
+                    <h2>Real-time Pose Tracker</h2>
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <button id="resetStatsBtn" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); display: none;">Reset Stats</button>
+                        <div class="status-indicator">
+                            <div class="status-dot" id="statusDot"></div>
+                            <span id="statusText">Loading Pose Model...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="webcam-viewport">
+                    <!-- Floating Pill Badges -->
+                    <div class="viewport-badges">
+                        <div class="badge-pill timer-badge">
+                            <span id="elapsedTime">0s</span>
+                        </div>
+                        <div class="badge-pill reps-badge">
+                            <span id="repCount">0 reps</span>
+                        </div>
+                    </div>
+
+                    <!-- Vertical Power/Progress Bar -->
+                    <div class="power-bar-wrapper">
+                        <div class="power-bar-label" id="powerPercent">0%</div>
+                        <div class="power-bar-container">
+                            <div class="power-bar-fill" id="powerFill"></div>
+                            <div class="power-bar-thumb" id="powerThumb"></div>
+                        </div>
+                    </div>
+
+                    <video id="webcam" autoplay playsinline></video>
+                    <canvas id="pose-overlay"></canvas>
+                    <div class="viewport-overlay" id="viewportOverlay">
+                        <button id="startWebcamBtn" class="btn btn-primary">Start Camera</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="dashboard-footer">
+            <p>&copy; 2026 Tracker App. Built with style and precision.</p>
+        </footer>
+    </div>
+
+    <!-- Main Javascript as a Module -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
