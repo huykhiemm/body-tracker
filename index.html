@@ -79,6 +79,35 @@
                 </div>
 
                 <div class="webcam-viewport">
+                    <!-- Fullscreen toggle button -->
+                    <button class="fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                    </button>
+
+                    <!-- Zoom Control Pill -->
+                    <div class="zoom-control-pill" id="zoomControl">
+                        <button class="zoom-btn active" data-zoom="1">1x</button>
+                        <button class="zoom-btn" data-zoom="1.5">1.5x</button>
+                        <button class="zoom-btn" data-zoom="2">2x</button>
+                    </div>
+
+                    <!-- Apple-style Floating Setup Guide -->
+                    <div class="live-setup-guide" id="liveSetupGuide">
+                        <div class="guide-header">
+                            <span class="guide-badge-icon" id="liveGuideIcon">📲</span>
+                            <div class="guide-title-text">
+                                <span class="guide-label">CAMERA PLACEMENT</span>
+                                <h4 class="guide-instruction" id="liveGuideInstruction">Chest height, 1.5m away</h4>
+                            </div>
+                            <button class="guide-toggle-btn" id="guideToggleBtn" title="Collapse/Expand Setup Guide">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline id="toggleArrow" points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                        </div>
+                        <div class="guide-details" id="liveGuideDetails">
+                            <p id="liveGuideStepText">Stand 1.5m away. Make sure your hands, hips, and feet are fully visible in the frame.</p>
+                        </div>
+                    </div>
+
                     <!-- Floating Pill Badges -->
                     <div class="viewport-badges">
                         <div class="badge-pill timer-badge">
@@ -101,7 +130,17 @@
                     <video id="webcam" autoplay playsinline></video>
                     <canvas id="pose-overlay"></canvas>
                     <div class="viewport-overlay" id="viewportOverlay">
-                        <button id="startWebcamBtn" class="btn btn-primary">Start Camera</button>
+                        <!-- Apple-style camera placement guide -->
+                        <div class="placement-guide">
+                            <div class="guide-icon" id="guideIcon">💪</div>
+                            <h3 class="guide-title" id="guideTitle">Push-Up Tracker</h3>
+                            <ul class="guide-steps" id="guideSteps">
+                                <li><span class="guide-icon-emoji">📐</span><span>Place camera at floor level, 1–2m in front of you</span></li>
+                                <li><span class="guide-icon-emoji">👤</span><span>Full body visible — head to feet in frame</span></li>
+                                <li><span class="guide-icon-emoji">💡</span><span>Good lighting on your body, avoid backlight</span></li>
+                            </ul>
+                        </div>
+                        <button id="startWebcamBtn" class="btn btn-primary">▶ Start Camera</button>
                     </div>
                 </div>
             </section>

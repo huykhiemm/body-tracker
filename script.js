@@ -1,4 +1,4 @@
-import { FilesetResolver, PoseLandmarker, DrawingUtils } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs";
+import { FilesetResolver, PoseLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs";
 
 // ==========================================================================
 // Section 1 – Dashboard Activity List
@@ -57,8 +57,8 @@ const viewportOverlay = document.getElementById('viewportOverlay');
 const statusDot       = document.getElementById('statusDot');
 const statusText      = document.getElementById('statusText');
 const resetStatsBtn   = document.getElementById('resetStatsBtn');
+const fullscreenBtn   = document.getElementById('fullscreenBtn');
 
-// Tracker UI
 const elapsedTimeEl  = document.getElementById('elapsedTime');
 const repCountEl     = document.getElementById('repCount');
 const powerFillEl    = document.getElementById('powerFill');
@@ -67,39 +67,122 @@ const powerPercentEl = document.getElementById('powerPercent');
 const repsBadgeEl    = document.querySelector('.reps-badge');
 
 // ==========================================================================
-// Section 3 – State Variables
+// Section 3 – Camera Placement Guides (per mode)
+// ==========================================================================
+const GUIDES = {
+    pushup: {
+        icon:  '💪',
+        title: 'Push-Up Tracker',
+        steps: [
+            ['📐', 'Place camera at floor level, 1–2m in front of you'],
+            ['👤', 'Full body visible — head to feet in frame'],
+            ['💡', 'Good lighting on your body, avoid backlight'],
+        ],
+    },
+    plank: {
+        icon:  '⏱',
+        title: 'Plank Hold Timer',
+        steps: [
+            ['📐', 'Camera at floor level, facing you directly'],
+            ['🧘', 'Get into position before pressing Start'],
+            ['⚡', 'Hold timer starts automatically when form is detected'],
+        ],
+    },
+    bicep: {
+        icon:  '🦾',
+        title: 'Bicep Curl Counter',
+        steps: [
+            ['📱', 'Camera at shoulder height, 1–2m away'],
+            ['💪', 'Keep your curling arm fully visible in frame'],
+            ['⏳', 'Hold 2.5s at the top of each curl for rep to count'],
+        ],
+    },
+};
+
+const LIVE_GUIDES = {
+    pushup: {
+        icon: '📐',
+        instruction: 'Đặt máy sát sàn, cách 1.5m',
+        details: 'Nằm nghiêng so với camera. Đảm bảo thấy rõ đầu, hông và chân. Giữ lưng thẳng.',
+    },
+    plank: {
+        icon: '🧘',
+        instruction: 'Đặt máy sát sàn, cách 1.5m',
+        details: 'Giữ lưng, hông và đầu thẳng hàng. Đồng hồ tự động tạm dừng nếu hông bị võng/nâng quá cao.',
+    },
+    bicep: {
+        icon: '💪',
+        instruction: 'Đặt máy ngang ngực, cách 1.5m',
+        details: 'Đứng thẳng, tay cầm tạ hướng về camera. Hạ hết cỡ góc 180°, gập sát góc 10° và giữ 2.5s.',
+    },
+};
+
+function updateGuide(mode) {
+    const g = GUIDES[mode];
+    document.getElementById('guideIcon').textContent  = g.icon;
+    document.getElementById('guideTitle').textContent = g.title;
+    document.getElementById('guideSteps').innerHTML   = g.steps
+        .map(([icon, text]) => `<li><span class="guide-icon-emoji">${icon}</span><span>${text}</span></li>`)
+        .join('');
+
+    // Update Apple-style floating live guide
+    const lg = LIVE_GUIDES[mode];
+    const liveIcon = document.getElementById('liveGuideIcon');
+    const liveInst = document.getElementById('liveGuideInstruction');
+    const liveText = document.getElementById('liveGuideStepText');
+    if (liveIcon) liveIcon.textContent = lg.icon;
+    if (liveInst) liveInst.textContent = lg.instruction;
+    if (liveText) liveText.textContent = lg.details;
+}
+
+// ==========================================================================
+// Section 4 – State Variables
 // ==========================================================================
 let poseLandmarker   = null;
 let webcamRunning    = false;
 let lastVideoTime    = -1;
 let animationFrameId = null;
 
-// Off-screen canvas fed to MediaPipe — gives it explicit pixel dimensions
 const inputCanvas = document.createElement('canvas');
 const inputCtx    = inputCanvas.getContext('2d', { willReadFrequently: true });
 
 // Exercise mode
-let currentMode = 'pushup'; // 'pushup' | 'plank' | 'bicep'
+let currentMode = 'pushup';
 
-// Shared push-up / bicep curl state
+// Shared rep-counting state
 let pushupCount    = 0;
 let stage          = 'up';
 let secondsElapsed = 0;
 let timerInterval  = null;
 
-// Dynamic calibration (push-up mode)
+// Dynamic calibration (push-up & plank)
 let minObservedDist = Infinity;
 let maxObservedDist = -Infinity;
 let smoothedPct     = 0;
 
-// Plank-specific state
+// Plank state
 let plankActive   = false;
 let plankHoldSec  = 0;
 let bestPlankSec  = 0;
 let plankInterval = null;
 
+// Bicep curl state
+const BICEP_HOLD_MS = 2500;      // 2.5-second hold required at top (joint-safe)
+let bicepHoldStart  = null;      // timestamp when arm first reached contracted zone
+let bicepHoldValid  = false;     // hold duration was satisfied
+
+// Biomechanics & Viewport HUD state
+let activeSide = 'left';          // 'left' or 'right' side profile active
+let activeElbowLandmark = null;
+let activeHipLandmark = null;
+let bicepHoldProgress = 0;        // 0.0 to 1.0 representing hold duration
+let formFeedback = {
+    isValid: true,
+    message: ""
+};
+
 // ==========================================================================
-// Section 4 – Timer & Tracker Helpers
+// Section 5 – Timer & Tracker Helpers
 // ==========================================================================
 function startTimer() {
     clearInterval(timerInterval);
@@ -124,37 +207,42 @@ function resetTracker() {
     maxObservedDist = -Infinity;
     smoothedPct     = 0;
 
-    // Plank state
+    // Plank
     clearInterval(plankInterval);
     plankInterval = null;
     plankActive   = false;
     plankHoldSec  = 0;
     bestPlankSec  = 0;
 
+    // Bicep
+    bicepHoldStart = null;
+    bicepHoldValid = false;
+    bicepHoldProgress = 0;
+    activeElbowLandmark = null;
+    activeHipLandmark = null;
+    formFeedback.isValid = true;
+    formFeedback.message = "";
+    powerFillEl.classList.remove('holding');
+
     elapsedTimeEl.textContent  = '0s';
     powerPercentEl.textContent = '0%';
     powerFillEl.style.height   = '0%';
     if (powerThumbEl) powerThumbEl.style.bottom = '0%';
 
-    // Badge label depends on mode
     repCountEl.textContent = currentMode === 'plank' ? '0s hold' : '0 reps';
 }
 
-if (resetStatsBtn) {
-    resetStatsBtn.addEventListener('click', resetTracker);
-}
+if (resetStatsBtn) resetStatsBtn.addEventListener('click', resetTracker);
 
 // ==========================================================================
-// Section 5 – Exercise Mode Switcher
+// Section 6 – Exercise Mode Switcher
 // ==========================================================================
 function switchMode(mode) {
     currentMode = mode;
-
-    // Update tab styles
     document.querySelectorAll('.exercise-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.mode === mode);
     });
-
+    updateGuide(mode);
     resetTracker();
 }
 
@@ -162,8 +250,33 @@ document.querySelectorAll('.exercise-btn').forEach(btn => {
     btn.addEventListener('click', () => switchMode(btn.dataset.mode));
 });
 
+// Initialise guide for default mode
+updateGuide(currentMode);
+
 // ==========================================================================
-// Section 6 – MediaPipe Model Initialisation
+// Section 7 – Fullscreen
+// ==========================================================================
+const viewport = document.querySelector('.webcam-viewport');
+
+fullscreenBtn?.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+        viewport.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen();
+    }
+});
+
+document.addEventListener('fullscreenchange', () => {
+    const isFs = !!document.fullscreenElement;
+    if (fullscreenBtn) {
+        fullscreenBtn.innerHTML = isFs
+            ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>`  // compress icon
+            : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>`; // expand icon
+    }
+});
+
+// ==========================================================================
+// Section 8 – MediaPipe Model Initialisation
 // ==========================================================================
 async function initializePoseModel() {
     try {
@@ -194,7 +307,7 @@ async function initializePoseModel() {
 }
 
 // ==========================================================================
-// Section 7 – Camera Control
+// Section 9 – Camera Control
 // ==========================================================================
 async function startCamera() {
     try {
@@ -228,10 +341,8 @@ function stopCamera() {
     webcamRunning = false;
     cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
-
     stopTimer();
 
-    // Stop plank hold timer if active
     clearInterval(plankInterval);
     plankInterval = null;
     plankActive   = false;
@@ -242,9 +353,9 @@ function stopCamera() {
     lastVideoTime    = -1;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     powerPercentEl.textContent = '0%';
     powerFillEl.style.height   = '0%';
+    powerFillEl.classList.remove('holding');
     if (powerThumbEl) powerThumbEl.style.bottom = '0%';
 
     viewportOverlay.classList.remove('hidden');
@@ -263,7 +374,7 @@ async function handleWebcamToggle() {
 }
 
 // ==========================================================================
-// Section 8 – Prediction Loop
+// Section 10 – Prediction Loop
 // ==========================================================================
 function predictLoop() {
     if (!webcamRunning) return;
@@ -286,10 +397,304 @@ function predictLoop() {
 }
 
 // ==========================================================================
-// Section 9 – Utility
+// Section 11 – Skeleton Drawing (custom, per-segment colors)
 // ==========================================================================
 
-// Angle (degrees) at joint B in the triangle A–B–C
+// ==========================================================================
+// Section 11 – Upgraded Visual Skeleton & Live HUD Drawing
+// ==========================================================================
+
+const SKELETON_CONNECTIONS = [
+    // Left Arm
+    { from: 11, to: 13, type: 'leftArm' },
+    { from: 13, to: 15, type: 'leftArm' },
+    // Right Arm
+    { from: 12, to: 14, type: 'rightArm' },
+    { from: 14, to: 16, type: 'rightArm' },
+    // Torso
+    { from: 11, to: 12, type: 'torso' },
+    { from: 11, to: 23, type: 'torso' },
+    { from: 12, to: 24, type: 'torso' },
+    { from: 23, to: 24, type: 'torso' },
+    // Left Leg
+    { from: 23, to: 25, type: 'leftLeg' },
+    { from: 25, to: 27, type: 'leftLeg' },
+    // Right Leg
+    { from: 24, to: 26, type: 'rightLeg' },
+    { from: 26, to: 28, type: 'rightLeg' }
+];
+
+const JOINT_COLORS = {
+    11: '#3b82f6', 13: '#3b82f6', 15: '#3b82f6', // Left arm (blue)
+    12: '#ec4899', 14: '#ec4899', 16: '#ec4899', // Right arm (pink)
+    23: '#10b981', 24: '#10b981',                 // Hips (emerald)
+    25: '#f59e0b', 27: '#f59e0b',                 // Left leg (amber)
+    26: '#a855f7', 28: '#a855f7',                 // Right leg (purple)
+};
+
+function drawHUDLabel(ctx, x, y, text, isWarning = false) {
+    if (!text) return;
+    ctx.save();
+    ctx.font = '600 11px Outfit, sans-serif';
+    const textWidth = ctx.measureText(text).width;
+    const padding = 8;
+    const rectWidth = textWidth + padding * 2;
+    const rectHeight = 20;
+    
+    // Draw background pill
+    ctx.fillStyle = isWarning ? 'rgba(239, 68, 68, 0.9)' : 'rgba(16, 185, 129, 0.9)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 1.5;
+    
+    ctx.beginPath();
+    const rx = x - rectWidth / 2;
+    const ry = y - 40; // float above joint
+    ctx.roundRect(rx, ry, rectWidth, rectHeight, 6);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Draw text
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, ry + rectHeight / 2);
+    ctx.restore();
+}
+
+function drawAngleArc(ctx, center, pt1, pt2, angleVal) {
+    const a1 = Math.atan2(pt1.y - center.y, pt1.x - center.x);
+    const a2 = Math.atan2(pt2.y - center.y, pt2.x - center.x);
+    
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, 22, a1, a2, a1 > a2);
+    ctx.stroke();
+    
+    // Draw text indicator
+    ctx.font = 'bold 10px Outfit, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Compute label position slightly outside the arc
+    const textAngle = a1 + (a2 - a1) / 2;
+    const tx = center.x + Math.cos(textAngle) * 36;
+    const ty = center.y + Math.sin(textAngle) * 36;
+    
+    // Draw mini background for legibility
+    ctx.fillStyle = 'rgba(15, 15, 20, 0.75)';
+    ctx.beginPath();
+    ctx.arc(tx, ty, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(Math.round(angleVal) + '°', tx, ty);
+    ctx.restore();
+}
+
+function drawColoredSkeleton(landmarks) {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // 1. Determine active side profile based on keypoint visibility sums
+    const leftVis = (landmarks[11]?.visibility ?? 0) + (landmarks[23]?.visibility ?? 0) + (landmarks[27]?.visibility ?? 0);
+    const rightVis = (landmarks[12]?.visibility ?? 0) + (landmarks[24]?.visibility ?? 0) + (landmarks[28]?.visibility ?? 0);
+    activeSide = leftVis > rightVis ? 'left' : 'right';
+
+    // 2. Resolve active joint coordinates
+    const shoulder = landmarks[activeSide === 'left' ? 11 : 12];
+    const elbow = landmarks[activeSide === 'left' ? 13 : 14];
+    const wrist = landmarks[activeSide === 'left' ? 15 : 16];
+    const hip = landmarks[activeSide === 'left' ? 23 : 24];
+    const ankle = landmarks[activeSide === 'left' ? 27 : 28];
+
+    // Reference active tracking joints globally
+    activeElbowLandmark = elbow;
+    activeHipLandmark = hip;
+
+    // 3. Draw connection lines (bones)
+    for (const conn of SKELETON_CONNECTIONS) {
+        const la = landmarks[conn.from];
+        const lb = landmarks[conn.to];
+        if (!la || !lb || (la.visibility ?? 1) < 0.25 || (lb.visibility ?? 1) < 0.25) continue;
+
+        const x1 = la.x * w;
+        const y1 = la.y * h;
+        const x2 = lb.x * w;
+        const y2 = lb.y * h;
+
+        let strokeColor = 'rgba(255, 255, 255, 0.12)';
+        let lineWidth = 2;
+        let isHighlighted = false;
+
+        if (currentMode === 'bicep') {
+            const isCurlingArm = (conn.type === 'leftArm' && activeSide === 'left') ||
+                                 (conn.type === 'rightArm' && activeSide === 'right');
+            if (isCurlingArm) {
+                strokeColor = bicepHoldValid ? '#10b981' : (bicepHoldStart ? '#facc15' : '#3b82f6');
+                lineWidth = 5;
+                isHighlighted = true;
+            }
+        } else if (currentMode === 'pushup' || currentMode === 'plank') {
+            const isActiveSideBody = conn.type === 'torso' || 
+                                     (conn.type === 'leftArm' && activeSide === 'left') ||
+                                     (conn.type === 'rightArm' && activeSide === 'right') ||
+                                     (conn.type === 'leftLeg' && activeSide === 'left') ||
+                                     (conn.type === 'rightLeg' && activeSide === 'right');
+            if (isActiveSideBody) {
+                strokeColor = formFeedback.isValid ? '#10b981' : '#ef4444';
+                lineWidth = 5;
+                isHighlighted = true;
+            }
+        } else {
+            strokeColor = JOINT_COLORS[conn.from] ?? 'rgba(100, 220, 255, 0.85)';
+            lineWidth = 3.5;
+            isHighlighted = true;
+        }
+
+        // Draw laser glow backing
+        if (isHighlighted) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = strokeColor;
+            ctx.globalAlpha = 0.28;
+            ctx.lineWidth = lineWidth * 2.5;
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        }
+
+        // Draw crisp core bone
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = isHighlighted ? '#ffffff' : strokeColor;
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+    }
+
+    // 4. Draw Joint Nodes
+    landmarks.forEach((lm, idx) => {
+        if ((lm.visibility ?? 1) < 0.25) return;
+        if (idx < 11) return; // Skip face landmarks
+
+        const x = lm.x * w;
+        const y = lm.y * h;
+        const isTargetJoint = (idx === 13 || idx === 14) || (idx === 23 || idx === 24);
+        const isFromActiveSide = (activeSide === 'left' && [11,13,15,23,25,27].includes(idx)) ||
+                                 (activeSide === 'right' && [12,14,16,24,26,28].includes(idx));
+
+        const baseColor = JOINT_COLORS[idx] ?? '#64c8ff';
+
+        if (isTargetJoint && isFromActiveSide) {
+            // Active joint target marker
+            ctx.save();
+            ctx.globalAlpha = 0.25;
+            ctx.fillStyle = baseColor;
+            ctx.beginPath();
+            const pulse = 10 + Math.sin(performance.now() / 150) * 3;
+            ctx.arc(x, y, pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Middle white ring
+            ctx.globalAlpha = 0.8;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(x, y, 6.5, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Core dot
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        } else {
+            // Normal / faded joint node
+            ctx.save();
+            ctx.fillStyle = isFromActiveSide ? baseColor : 'rgba(255, 255, 255, 0.25)';
+            ctx.beginPath();
+            ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    });
+
+    // 5. Draw Angle Arcs & Biomechanics Labels
+    if (shoulder && elbow && wrist && (shoulder.visibility ?? 0) > 0.45 && (elbow.visibility ?? 0) > 0.45 && (wrist.visibility ?? 0) > 0.45) {
+        const sx = shoulder.x * w;
+        const sy = shoulder.y * h;
+        const ex = elbow.x * w;
+        const ey = elbow.y * h;
+        const wx = wrist.x * w;
+        const wy = wrist.y * h;
+
+        const eAngle = getAngle(shoulder, elbow, wrist);
+
+        if (currentMode === 'bicep') {
+            drawAngleArc(ctx, { x: ex, y: ey }, { x: sx, y: sy }, { x: wx, y: wy }, eAngle);
+            
+            // Render elbow radial progress wheel
+            if (bicepHoldProgress > 0) {
+                ctx.beginPath();
+                ctx.arc(ex, ey, 18, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(ex, ey, 18, -Math.PI / 2, -Math.PI / 2 + bicepHoldProgress * Math.PI * 2);
+                ctx.strokeStyle = bicepHoldValid ? '#10b981' : '#facc15';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.save();
+                ctx.font = 'bold 9px Outfit, sans-serif';
+                ctx.fillStyle = bicepHoldValid ? '#10b981' : '#facc15';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                if (bicepHoldProgress < 1) {
+                    const rem = ((BICEP_HOLD_MS - (performance.now() - bicepHoldStart)) / 1000).toFixed(1);
+                    ctx.fillText(rem + 's', ex, ey - 22);
+                } else {
+                    ctx.fillText('HOLD!', ex, ey - 22);
+                }
+                ctx.restore();
+            }
+        } else if (currentMode === 'pushup') {
+            drawAngleArc(ctx, { x: ex, y: ey }, { x: sx, y: sy }, { x: wx, y: wy }, eAngle);
+        }
+    }
+
+    if (shoulder && hip && ankle && (shoulder.visibility ?? 0) > 0.45 && (hip.visibility ?? 0) > 0.45 && (ankle.visibility ?? 0) > 0.45) {
+        const sx = shoulder.x * w;
+        const sy = shoulder.y * h;
+        const hx = hip.x * w;
+        const hy = hip.y * h;
+        const ax = ankle.x * w;
+        const ay = ankle.y * h;
+
+        const hAngle = getAngle(shoulder, hip, ankle);
+
+        if (currentMode === 'pushup' || currentMode === 'plank') {
+            drawAngleArc(ctx, { x: hx, y: hy }, { x: sx, y: sy }, { x: ax, y: ay }, hAngle);
+            drawHUDLabel(ctx, hx, hy, formFeedback.message, !formFeedback.isValid);
+        }
+    }
+
+    ctx.restore();
+}
+
+// ==========================================================================
+// Section 12 – Utility
+// ==========================================================================
 function getAngle(a, b, c) {
     const ab = { x: a.x - b.x, y: a.y - b.y };
     const cb = { x: c.x - b.x, y: c.y - b.y };
@@ -301,8 +706,8 @@ function getAngle(a, b, c) {
 
 function updatePowerBar(display) {
     powerFillEl.style.height          = `${display}%`;
-    powerPercentEl.textContent        = `${display}%`;
     if (powerThumbEl) powerThumbEl.style.bottom = `${display}%`;
+    // powerPercentEl is set explicitly by each exercise handler
 }
 
 function flashRepBadge() {
@@ -312,15 +717,35 @@ function flashRepBadge() {
 }
 
 // ==========================================================================
-// Section 10 – Exercise Logic
+// Section 13 – Exercise Biomechanics Logic
 // ==========================================================================
 
-// ── Mode: Push-Up ──────────────────────────────────────────────────────────
+// ── Push-Up ────────────────────────────────────────────────────────────────
 function processPushUp(landmarks) {
-    const shoulder = landmarks[11];
-    const wrist    = landmarks[15];
+    const shoulder = activeSide === 'left' ? landmarks[11] : landmarks[12];
+    const wrist    = activeSide === 'left' ? landmarks[15] : landmarks[16];
+    const hip      = activeSide === 'left' ? landmarks[23] : landmarks[24];
+    const ankle    = activeSide === 'left' ? landmarks[27] : landmarks[28];
 
     if (!shoulder || !wrist) return;
+
+    // Verify spine alignment (back-hip-ankle angle)
+    if (shoulder && hip && ankle) {
+        const hAngle = getAngle(shoulder, hip, ankle);
+        if (hAngle < 162) {
+            formFeedback.isValid = false;
+            formFeedback.message = "⚠️ NÂNG HÔNG / SAGGY HIPS";
+        } else if (hAngle > 196) {
+            formFeedback.isValid = false;
+            formFeedback.message = "⚠️ HẠ HÔNG / HIPS TOO HIGH";
+        } else {
+            formFeedback.isValid = true;
+            formFeedback.message = "✓ THẲNG LƯNG / NEUTRAL SPINE";
+        }
+    } else {
+        formFeedback.isValid = true;
+        formFeedback.message = "✓ ĐANG PHÂN TÍCH / ANALYZING";
+    }
 
     const distance = Math.abs(shoulder.y - wrist.y);
 
@@ -328,17 +753,26 @@ function processPushUp(landmarks) {
     if (distance > maxObservedDist) maxObservedDist = distance;
 
     const range = maxObservedDist - minObservedDist;
-
-    if (range < 0.08) {
-        powerPercentEl.textContent = 'Cal…';
-        return;
-    }
+    if (range < 0.08) { powerPercentEl.textContent = 'Cal…'; return; }
 
     let pct = ((maxObservedDist - distance) / range) * 100;
     pct = Math.max(0, Math.min(100, pct));
-
     smoothedPct = smoothedPct * 0.7 + pct * 0.3;
-    updatePowerBar(Math.round(smoothedPct));
+    const display = Math.round(smoothedPct);
+
+    updatePowerBar(display);
+
+    // Apply warn state to fill bar
+    const fillEl = document.getElementById('powerFill');
+    if (fillEl) {
+        if (!formFeedback.isValid) {
+            fillEl.style.background = '#ef4444'; // Red warning
+        } else {
+            fillEl.style.background = '';
+        }
+    }
+
+    powerPercentEl.textContent = formFeedback.isValid ? `${display}%` : "⚠️ FORM!";
 
     if (smoothedPct > 80) {
         stage = 'down';
@@ -350,15 +784,14 @@ function processPushUp(landmarks) {
     }
 }
 
-// ── Mode: Plank ─────────────────────────────────────────────────────────────
-// Detection: shoulder→wrist Y distance stays in a stable mid-range.
-// Timer counts continuous seconds held. Best time persists per session reset.
+// ── Plank ───────────────────────────────────────────────────────────────────
 function processPlank(landmarks) {
-    const shoulder = landmarks[11];
-    const wrist    = landmarks[15];
+    const shoulder = activeSide === 'left' ? landmarks[11] : landmarks[12];
+    const wrist    = activeSide === 'left' ? landmarks[15] : landmarks[16];
+    const hip      = activeSide === 'left' ? landmarks[23] : landmarks[24];
+    const ankle    = activeSide === 'left' ? landmarks[27] : landmarks[28];
 
     if (!shoulder || !wrist) {
-        // Lost detection — stop hold
         if (plankActive) {
             plankActive = false;
             clearInterval(plankInterval);
@@ -369,26 +802,53 @@ function processPlank(landmarks) {
         return;
     }
 
+    // Verify spine alignment
+    if (shoulder && hip && ankle) {
+        const hAngle = getAngle(shoulder, hip, ankle);
+        if (hAngle < 162) {
+            formFeedback.isValid = false;
+            formFeedback.message = "⚠️ NÂNG HÔNG / SAGGY HIPS";
+        } else if (hAngle > 196) {
+            formFeedback.isValid = false;
+            formFeedback.message = "⚠️ HẠ HÔNG / HIPS TOO HIGH";
+        } else {
+            formFeedback.isValid = true;
+            formFeedback.message = "✓ THẲNG LƯNG / NEUTRAL SPINE";
+        }
+    } else {
+        formFeedback.isValid = true;
+        formFeedback.message = "✓ ĐANG PHÂN TÍCH / ANALYZING";
+    }
+
     const distance = Math.abs(shoulder.y - wrist.y);
 
-    // Expand calibration range
     if (distance < minObservedDist) minObservedDist = Math.max(0.04, distance);
     if (distance > maxObservedDist) maxObservedDist = distance;
 
     const range = maxObservedDist - minObservedDist;
-    if (range < 0.06) {
-        powerPercentEl.textContent = 'Cal…';
-        return;
-    }
+    if (range < 0.06) { powerPercentEl.textContent = 'Cal…'; return; }
 
-    // High pct = arms extended forward/down = plank form
     let pct = ((distance - minObservedDist) / range) * 100;
     pct = Math.max(0, Math.min(100, pct));
-    smoothedPct = smoothedPct * 0.85 + pct * 0.15; // slower smoothing = more stable
-    updatePowerBar(Math.round(smoothedPct));
+    smoothedPct = smoothedPct * 0.85 + pct * 0.15;
+    const display = Math.round(smoothedPct);
 
-    // In plank when power bar is in a stable mid-to-high range
-    const inPosition = smoothedPct > 35 && smoothedPct < 95;
+    updatePowerBar(display);
+
+    // Apply warn state to fill bar
+    const fillEl = document.getElementById('powerFill');
+    if (fillEl) {
+        if (!formFeedback.isValid) {
+            fillEl.style.background = '#ef4444'; // Red warning
+        } else {
+            fillEl.style.background = '';
+        }
+    }
+
+    powerPercentEl.textContent = formFeedback.isValid ? `${display}%` : "⚠️ FORM!";
+
+    // Plank holds only count when posture is correct
+    const inPosition = smoothedPct > 35 && smoothedPct < 95 && formFeedback.isValid;
 
     if (inPosition && !plankActive) {
         plankActive  = true;
@@ -408,10 +868,7 @@ function processPlank(landmarks) {
     }
 }
 
-// ── Mode: Bicep Curl ────────────────────────────────────────────────────────
-// Measures elbow angle (shoulder→elbow→wrist).
-// 180° = arm extended (0%) → 0° = fully contracted (100%).
-// Rep counted when arm returns to extended after a full contraction.
+// ── Bicep Curl ──────────────────────────────────────────────────────────────
 function processBicepCurl(landmarks) {
     const lShoulder = landmarks[11];
     const lElbow    = landmarks[13];
@@ -421,39 +878,116 @@ function processBicepCurl(landmarks) {
     const rWrist    = landmarks[16];
 
     let angle = null;
+    let activeElbow = null;
 
-    // Prefer left arm; fall back to right if left not fully visible
-    if (lShoulder && lElbow && lWrist) {
-        angle = getAngle(lShoulder, lElbow, lWrist);
-    } else if (rShoulder && rElbow && rWrist) {
-        angle = getAngle(rShoulder, rElbow, rWrist);
+    // Dynamic selection of active curling arm based on visibility & angle
+    let lAngle = null;
+    let rAngle = null;
+    if (lShoulder && lElbow && lWrist && (lElbow.visibility ?? 0) > 0.45) {
+        lAngle = getAngle(lShoulder, lElbow, lWrist);
+    }
+    if (rShoulder && rElbow && rWrist && (rElbow.visibility ?? 0) > 0.45) {
+        rAngle = getAngle(rShoulder, rElbow, rWrist);
     }
 
-    if (angle === null) return;
+    if (lAngle !== null && rAngle !== null) {
+        if (lAngle < rAngle) {
+            angle = lAngle;
+            activeElbow = lElbow;
+            activeSide = 'left';
+        } else {
+            angle = rAngle;
+            activeElbow = rElbow;
+            activeSide = 'right';
+        }
+    } else if (lAngle !== null) {
+        angle = lAngle;
+        activeElbow = lElbow;
+        activeSide = 'left';
+    } else if (rAngle !== null) {
+        angle = rAngle;
+        activeElbow = rElbow;
+        activeSide = 'right';
+    }
 
-    // 180° extended → 0%  |  0° contracted → 100%
-    let pct = ((180 - angle) / 180) * 100;
+    if (angle === null) {
+        formFeedback.isValid = true;
+        formFeedback.message = "HIỂN THỊ TAY / SHOW ARM";
+        return;
+    }
+
+    // Joint-safe range: 180° (extended) to 10° (contracted)
+    const MIN_ANGLE = 10;
+    const MAX_ANGLE = 180;
+    let pct = ((MAX_ANGLE - angle) / (MAX_ANGLE - MIN_ANGLE)) * 100;
     pct = Math.max(0, Math.min(100, pct));
 
     smoothedPct = smoothedPct * 0.6 + pct * 0.4;
-    updatePowerBar(Math.round(smoothedPct));
+    const display = Math.round(smoothedPct);
+    updatePowerBar(display);
 
-    // State machine: count reps on full contraction cycle
+    const fillEl = document.getElementById('powerFill');
+    if (fillEl) {
+        fillEl.style.background = '';
+    }
+
+    const nowMs = performance.now();
+
     if (smoothedPct > 70) {
-        stage = 'down'; // arm contracted (confusingly named "down" for parity)
-    } else if (smoothedPct < 15 && stage === 'down') {
-        stage = 'up'; // arm back to extended → rep complete
-        pushupCount++;
-        repCountEl.textContent = `${pushupCount} reps`;
-        flashRepBadge();
+        // Arm is contracted (at the top of the curl)
+        if (bicepHoldStart === null) {
+            bicepHoldStart = nowMs;
+            bicepHoldValid = false;
+            powerFillEl.classList.add('holding');
+        }
+
+        const elapsed = nowMs - bicepHoldStart;
+        bicepHoldProgress = Math.min(1, elapsed / BICEP_HOLD_MS);
+
+        if (elapsed >= BICEP_HOLD_MS) {
+            if (!bicepHoldValid) {
+                bicepHoldValid = true;
+                stage = 'down'; // Ready to count on return to extended
+            }
+            powerPercentEl.textContent = '✓ GIỮ!';
+            formFeedback.isValid = true;
+            formFeedback.message = "✓ GIỮ TỐT / GOOD HOLD!";
+        } else {
+            const remaining = ((BICEP_HOLD_MS - elapsed) / 1000).toFixed(1);
+            powerPercentEl.textContent = `${remaining}s`;
+            formFeedback.isValid = true;
+            formFeedback.message = `GIỮ: ${remaining}s`;
+        }
+
+    } else {
+        // Arm is not contracted
+        bicepHoldStart = null;
+        bicepHoldProgress = 0;
+        powerFillEl.classList.remove('holding');
+        powerPercentEl.textContent = `${display}%`;
+
+        if (smoothedPct < 15) {
+            formFeedback.isValid = true;
+            formFeedback.message = "✓ THẲNG TAY / EXTENDED";
+
+            if (stage === 'down' && bicepHoldValid) {
+                // Completed curl -> hold -> extension cycle
+                pushupCount++;
+                repCountEl.textContent = `${pushupCount} reps`;
+                flashRepBadge();
+            }
+            bicepHoldValid = false;
+            stage = 'up';
+        } else {
+            formFeedback.isValid = true;
+            formFeedback.message = stage === 'down' ? "HẠ TẠ XUỐNG / LOWER WEIGHT" : "GẬP TAY LÊN / CURL UP";
+        }
     }
 }
 
 // ==========================================================================
-// Section 11 – Draw Skeleton on Canvas
+// Section 14 – Pose Result Handler
 // ==========================================================================
-const drawingUtils = new DrawingUtils(ctx);
-
 function onPoseResult(result) {
     if (!webcamRunning) return;
 
@@ -462,21 +996,8 @@ function onPoseResult(result) {
     if (!result?.landmarks?.length) return;
 
     for (const landmarks of result.landmarks) {
-        // White skeleton connection lines
-        drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
-            color: '#ffffff',
-            lineWidth: 2,
-        });
+        drawColoredSkeleton(landmarks);
 
-        // Blue landmark dots
-        drawingUtils.drawLandmarks(landmarks, {
-            color: '#4a90d9',
-            fillColor: '#4a90d9',
-            radius: 4,
-            lineWidth: 1,
-        });
-
-        // Dispatch to the active exercise logic
         if (currentMode === 'pushup') processPushUp(landmarks);
         else if (currentMode === 'plank')  processPlank(landmarks);
         else if (currentMode === 'bicep')  processBicepCurl(landmarks);
@@ -488,3 +1009,37 @@ function onPoseResult(result) {
 // ==========================================================================
 initializePoseModel();
 startWebcamBtn.addEventListener('click', handleWebcamToggle);
+
+// Live Setup Guide Collapse/Expand Trigger
+const liveSetupGuide = document.getElementById('liveSetupGuide');
+const guideToggleBtn = document.getElementById('guideToggleBtn');
+
+if (guideToggleBtn && liveSetupGuide) {
+    guideToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Stop click from propagating
+        liveSetupGuide.classList.toggle('collapsed');
+    });
+
+    // Expanding if clicked while collapsed
+    liveSetupGuide.addEventListener('click', () => {
+        if (liveSetupGuide.classList.contains('collapsed')) {
+            liveSetupGuide.classList.remove('collapsed');
+        }
+    });
+}
+
+// Digital Zoom Selection
+const zoomBtns = document.querySelectorAll('.zoom-btn');
+const viewportEl = document.querySelector('.webcam-viewport');
+
+if (zoomBtns && viewportEl) {
+    zoomBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            zoomBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const zoomVal = btn.dataset.zoom;
+            viewportEl.style.setProperty('--zoom-factor', zoomVal);
+        });
+    });
+}

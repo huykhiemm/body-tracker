@@ -392,7 +392,9 @@ body {
     height: 100%;
     object-fit: cover;
     display: block;
-    transform: scaleX(-1); /* Mirror camera feed */
+    transform: scaleX(-1) scale(var(--zoom-factor, 1)); /* Mirror and scale camera feed */
+    transform-origin: center center;
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 #pose-overlay {
@@ -402,8 +404,10 @@ body {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    transform: scaleX(-1); /* Mirror drawings to match mirrored video */
+    transform: scaleX(-1) scale(var(--zoom-factor, 1)); /* Mirror and scale overlays */
+    transform-origin: center center;
     z-index: 2;
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .viewport-overlay {
@@ -548,3 +552,245 @@ body {
 .badge-pill.flash-active {
     animation: badge-flash 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+/* ==========================================================================
+   New Visual Overlay Components (Fullscreen, Zoom, Setup Guide, Holding)
+   ========================================================================== */
+
+/* Fullscreen Button Override */
+.fullscreen-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 5;
+    background: rgba(20, 20, 25, 0.7);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fullscreen-btn:hover {
+    background: rgba(45, 45, 55, 0.85);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: scale(1.08);
+}
+
+.fullscreen-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Digital Zoom Pill */
+.zoom-control-pill {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 5;
+    background: rgba(20, 20, 25, 0.7);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    display: flex;
+    padding: 3px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.zoom-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.zoom-btn:hover {
+    color: var(--text-primary);
+}
+
+.zoom-btn.active {
+    background: var(--accent-gradient);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+/* Apple Fitness-style Floating Setup Guide Widget */
+.live-setup-guide {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 5;
+    background: rgba(20, 20, 25, 0.72);
+    backdrop-filter: blur(20px) saturate(190%);
+    -webkit-backdrop-filter: blur(20px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    width: 250px;
+    padding: 0.8rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+    max-height: 180px;
+    overflow: hidden;
+}
+
+.live-setup-guide.collapsed {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.live-setup-guide.collapsed:hover {
+    background: rgba(35, 35, 45, 0.85);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+}
+
+.live-setup-guide.collapsed .guide-title-text,
+.live-setup-guide.collapsed .guide-details {
+    display: none;
+    opacity: 0;
+}
+
+.live-setup-guide.collapsed .guide-header {
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    padding: 0;
+}
+
+.live-setup-guide.collapsed .guide-badge-icon {
+    font-size: 1.15rem;
+    margin: 0;
+    background: transparent;
+    width: auto;
+    height: auto;
+}
+
+.live-setup-guide.collapsed .guide-toggle-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.guide-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    position: relative;
+}
+
+.guide-badge-icon {
+    font-size: 1.25rem;
+    background: rgba(255, 255, 255, 0.08);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.guide-title-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.guide-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--accent-color);
+    text-transform: uppercase;
+}
+
+.guide-instruction {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.25;
+}
+
+.guide-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.guide-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+.guide-toggle-btn svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.3s ease;
+}
+
+.live-setup-guide.collapsed #toggleArrow {
+    transform: rotate(180deg);
+}
+
+.guide-details {
+    margin-top: 0.6rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Power Bar Holding/Active State styling */
+.power-bar-fill.holding {
+    background: linear-gradient(to top, #eab308 0%, #facc15 100%) !important;
+    box-shadow: 0 0 16px rgba(234, 179, 8, 0.8);
+    animation: holding-pulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes holding-pulse {
+    0% {
+        filter: brightness(0.95);
+    }
+    100% {
+        filter: brightness(1.2) saturate(1.1);
+    }
+}
+
