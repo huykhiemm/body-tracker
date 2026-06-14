@@ -58,13 +58,13 @@ const statusDot       = document.getElementById('statusDot');
 const statusText      = document.getElementById('statusText');
 const resetStatsBtn   = document.getElementById('resetStatsBtn');
 
-// Tracker UI — cache all references once at module level
+// Tracker UI
 const elapsedTimeEl  = document.getElementById('elapsedTime');
 const repCountEl     = document.getElementById('repCount');
 const powerFillEl    = document.getElementById('powerFill');
 const powerThumbEl   = document.getElementById('powerThumb');
 const powerPercentEl = document.getElementById('powerPercent');
-const repsBadgeEl    = document.querySelector('.reps-badge'); // cached — used on every rep
+const repsBadgeEl    = document.querySelector('.reps-badge');
 
 // ==========================================================================
 // Section 3 – State Variables
@@ -75,20 +75,28 @@ let lastVideoTime    = -1;
 let animationFrameId = null;
 
 // Off-screen canvas fed to MediaPipe — gives it explicit pixel dimensions
-// so NORM_RECT projection works correctly on non-square (4:3) video.
 const inputCanvas = document.createElement('canvas');
 const inputCtx    = inputCanvas.getContext('2d', { willReadFrequently: true });
 
-// Push-up state
+// Exercise mode
+let currentMode = 'pushup'; // 'pushup' | 'plank' | 'bicep'
+
+// Shared push-up / bicep curl state
 let pushupCount    = 0;
-let stage          = 'up';   // 'up' | 'down'
+let stage          = 'up';
 let secondsElapsed = 0;
 let timerInterval  = null;
 
-// Dynamic calibration — self-adjusts to each user's actual movement range
-let minObservedDist = Infinity;   // smallest shoulder→wrist Y distance seen ("down")
-let maxObservedDist = -Infinity;  // largest  shoulder→wrist Y distance seen ("up")
-let smoothedPct     = 0;          // exponentially-smoothed bar percentage
+// Dynamic calibration (push-up mode)
+let minObservedDist = Infinity;
+let maxObservedDist = -Infinity;
+let smoothedPct     = 0;
+
+// Plank-specific state
+let plankActive   = false;
+let plankHoldSec  = 0;
+let bestPlankSec  = 0;
+let plankInterval = null;
 
 // ==========================================================================
 // Section 4 – Timer & Tracker Helpers
@@ -116,11 +124,20 @@ function resetTracker() {
     maxObservedDist = -Infinity;
     smoothedPct     = 0;
 
+    // Plank state
+    clearInterval(plankInterval);
+    plankInterval = null;
+    plankActive   = false;
+    plankHoldSec  = 0;
+    bestPlankSec  = 0;
+
     elapsedTimeEl.textContent  = '0s';
-    repCountEl.textContent     = '0 reps';
     powerPercentEl.textContent = '0%';
     powerFillEl.style.height   = '0%';
     if (powerThumbEl) powerThumbEl.style.bottom = '0%';
+
+    // Badge label depends on mode
+    repCountEl.textContent = currentMode === 'plank' ? '0s hold' : '0 reps';
 }
 
 if (resetStatsBtn) {
@@ -128,7 +145,25 @@ if (resetStatsBtn) {
 }
 
 // ==========================================================================
-// Section 5 – MediaPipe Model Initialisation
+// Section 5 – Exercise Mode Switcher
+// ==========================================================================
+function switchMode(mode) {
+    currentMode = mode;
+
+    // Update tab styles
+    document.querySelectorAll('.exercise-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    resetTracker();
+}
+
+document.querySelectorAll('.exercise-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+});
+
+// ==========================================================================
+// Section 6 – MediaPipe Model Initialisation
 // ==========================================================================
 async function initializePoseModel() {
     try {
@@ -143,7 +178,7 @@ async function initializePoseModel() {
                 modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
                 delegate: 'GPU',
             },
-            runningMode: 'VIDEO', // synchronous — result returned directly from detectForVideo
+            runningMode: 'VIDEO',
             numPoses: 1,
             outputSegmentationMasks: false,
         });
@@ -159,7 +194,7 @@ async function initializePoseModel() {
 }
 
 // ==========================================================================
-// Section 6 – Camera Control
+// Section 7 – Camera Control
 // ==========================================================================
 async function startCamera() {
     try {
@@ -168,8 +203,6 @@ async function startCamera() {
         });
         webcam.srcObject = stream;
 
-        // {once:true} prevents listener accumulation on repeated stop/start cycles.
-        // Canvas is sized here — loadeddata guarantees videoWidth/Height are non-zero.
         webcam.addEventListener('loadeddata', () => {
             canvas.width  = webcam.videoWidth;
             canvas.height = webcam.videoHeight;
@@ -198,6 +231,11 @@ function stopCamera() {
 
     stopTimer();
 
+    // Stop plank hold timer if active
+    clearInterval(plankInterval);
+    plankInterval = null;
+    plankActive   = false;
+
     const tracks = webcam.srcObject?.getTracks() ?? [];
     tracks.forEach(t => t.stop());
     webcam.srcObject = null;
@@ -205,7 +243,6 @@ function stopCamera() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Reset power bar to neutral state
     powerPercentEl.textContent = '0%';
     powerFillEl.style.height   = '0%';
     if (powerThumbEl) powerThumbEl.style.bottom = '0%';
@@ -226,7 +263,7 @@ async function handleWebcamToggle() {
 }
 
 // ==========================================================================
-// Section 7 – Prediction Loop
+// Section 8 – Prediction Loop
 // ==========================================================================
 function predictLoop() {
     if (!webcamRunning) return;
@@ -235,17 +272,12 @@ function predictLoop() {
     if (webcam.currentTime !== lastVideoTime) {
         lastVideoTime = webcam.currentTime;
 
-        // Keep input canvas in sync with video dimensions
         if (inputCanvas.width !== webcam.videoWidth || inputCanvas.height !== webcam.videoHeight) {
             inputCanvas.width  = webcam.videoWidth;
             inputCanvas.height = webcam.videoHeight;
         }
 
-        // Draw video frame to off-screen canvas — gives MediaPipe explicit pixel dimensions,
-        // fixing the NORM_RECT projection issue on non-square (4:3) video.
         inputCtx.drawImage(webcam, 0, 0);
-
-        // VIDEO mode returns result synchronously — no async callback needed
         const result = poseLandmarker.detectForVideo(inputCanvas, nowMs);
         onPoseResult(result);
     }
@@ -254,60 +286,171 @@ function predictLoop() {
 }
 
 // ==========================================================================
-// Section 8 – Power Bar & Rep Counting
+// Section 9 – Utility
 // ==========================================================================
+
+// Angle (degrees) at joint B in the triangle A–B–C
+function getAngle(a, b, c) {
+    const ab = { x: a.x - b.x, y: a.y - b.y };
+    const cb = { x: c.x - b.x, y: c.y - b.y };
+    const dot = ab.x * cb.x + ab.y * cb.y;
+    const mag = Math.sqrt(ab.x ** 2 + ab.y ** 2) * Math.sqrt(cb.x ** 2 + cb.y ** 2);
+    if (mag === 0) return 0;
+    return Math.acos(Math.max(-1, Math.min(1, dot / mag))) * (180 / Math.PI);
+}
+
+function updatePowerBar(display) {
+    powerFillEl.style.height          = `${display}%`;
+    powerPercentEl.textContent        = `${display}%`;
+    if (powerThumbEl) powerThumbEl.style.bottom = `${display}%`;
+}
+
+function flashRepBadge() {
+    if (!repsBadgeEl) return;
+    repsBadgeEl.classList.add('flash-active');
+    setTimeout(() => repsBadgeEl.classList.remove('flash-active'), 600);
+}
+
+// ==========================================================================
+// Section 10 – Exercise Logic
+// ==========================================================================
+
+// ── Mode: Push-Up ──────────────────────────────────────────────────────────
 function processPushUp(landmarks) {
-    const shoulder = landmarks[11]; // Left Shoulder
-    const wrist    = landmarks[15]; // Left Wrist
+    const shoulder = landmarks[11];
+    const wrist    = landmarks[15];
 
     if (!shoulder || !wrist) return;
 
     const distance = Math.abs(shoulder.y - wrist.y);
 
-    // Expand calibration range as the user moves
     if (distance < minObservedDist) minObservedDist = Math.max(0.04, distance);
     if (distance > maxObservedDist) maxObservedDist = distance;
 
     const range = maxObservedDist - minObservedDist;
 
-    // Require at least 0.08 range before counting — avoids false reps
-    // from casual movement while the session is just starting.
     if (range < 0.08) {
         powerPercentEl.textContent = 'Cal…';
         return;
     }
 
-    // Map: maxObserved (arms up/straight) → 0%  |  minObserved (chest low) → 100%
     let pct = ((maxObservedDist - distance) / range) * 100;
     pct = Math.max(0, Math.min(100, pct));
 
-    // Exponential smoothing (70/30) — reduces jitter without noticeable lag
     smoothedPct = smoothedPct * 0.7 + pct * 0.3;
-    const display = Math.round(smoothedPct);
+    updatePowerBar(Math.round(smoothedPct));
 
-    // Update power bar UI
-    powerFillEl.style.height          = `${display}%`;
-    powerPercentEl.textContent        = `${display}%`;
-    if (powerThumbEl) powerThumbEl.style.bottom = `${display}%`;
-
-    // Rep state machine
     if (smoothedPct > 80) {
         stage = 'down';
     } else if (smoothedPct < 20 && stage === 'down') {
         stage = 'up';
         pushupCount++;
         repCountEl.textContent = `${pushupCount} reps`;
+        flashRepBadge();
+    }
+}
 
-        // Flash the rep badge on each counted rep
-        if (repsBadgeEl) {
-            repsBadgeEl.classList.add('flash-active');
-            setTimeout(() => repsBadgeEl.classList.remove('flash-active'), 600);
+// ── Mode: Plank ─────────────────────────────────────────────────────────────
+// Detection: shoulder→wrist Y distance stays in a stable mid-range.
+// Timer counts continuous seconds held. Best time persists per session reset.
+function processPlank(landmarks) {
+    const shoulder = landmarks[11];
+    const wrist    = landmarks[15];
+
+    if (!shoulder || !wrist) {
+        // Lost detection — stop hold
+        if (plankActive) {
+            plankActive = false;
+            clearInterval(plankInterval);
+            plankInterval = null;
+            repCountEl.textContent = `Best: ${bestPlankSec}s`;
+            plankHoldSec = 0;
         }
+        return;
+    }
+
+    const distance = Math.abs(shoulder.y - wrist.y);
+
+    // Expand calibration range
+    if (distance < minObservedDist) minObservedDist = Math.max(0.04, distance);
+    if (distance > maxObservedDist) maxObservedDist = distance;
+
+    const range = maxObservedDist - minObservedDist;
+    if (range < 0.06) {
+        powerPercentEl.textContent = 'Cal…';
+        return;
+    }
+
+    // High pct = arms extended forward/down = plank form
+    let pct = ((distance - minObservedDist) / range) * 100;
+    pct = Math.max(0, Math.min(100, pct));
+    smoothedPct = smoothedPct * 0.85 + pct * 0.15; // slower smoothing = more stable
+    updatePowerBar(Math.round(smoothedPct));
+
+    // In plank when power bar is in a stable mid-to-high range
+    const inPosition = smoothedPct > 35 && smoothedPct < 95;
+
+    if (inPosition && !plankActive) {
+        plankActive  = true;
+        plankHoldSec = 0;
+        plankInterval = setInterval(() => {
+            plankHoldSec++;
+            if (plankHoldSec > bestPlankSec) bestPlankSec = plankHoldSec;
+            repCountEl.textContent = `${plankHoldSec}s hold`;
+            flashRepBadge();
+        }, 1000);
+    } else if (!inPosition && plankActive) {
+        plankActive = false;
+        clearInterval(plankInterval);
+        plankInterval = null;
+        repCountEl.textContent = `Best: ${bestPlankSec}s`;
+        plankHoldSec = 0;
+    }
+}
+
+// ── Mode: Bicep Curl ────────────────────────────────────────────────────────
+// Measures elbow angle (shoulder→elbow→wrist).
+// 180° = arm extended (0%) → 0° = fully contracted (100%).
+// Rep counted when arm returns to extended after a full contraction.
+function processBicepCurl(landmarks) {
+    const lShoulder = landmarks[11];
+    const lElbow    = landmarks[13];
+    const lWrist    = landmarks[15];
+    const rShoulder = landmarks[12];
+    const rElbow    = landmarks[14];
+    const rWrist    = landmarks[16];
+
+    let angle = null;
+
+    // Prefer left arm; fall back to right if left not fully visible
+    if (lShoulder && lElbow && lWrist) {
+        angle = getAngle(lShoulder, lElbow, lWrist);
+    } else if (rShoulder && rElbow && rWrist) {
+        angle = getAngle(rShoulder, rElbow, rWrist);
+    }
+
+    if (angle === null) return;
+
+    // 180° extended → 0%  |  0° contracted → 100%
+    let pct = ((180 - angle) / 180) * 100;
+    pct = Math.max(0, Math.min(100, pct));
+
+    smoothedPct = smoothedPct * 0.6 + pct * 0.4;
+    updatePowerBar(Math.round(smoothedPct));
+
+    // State machine: count reps on full contraction cycle
+    if (smoothedPct > 70) {
+        stage = 'down'; // arm contracted (confusingly named "down" for parity)
+    } else if (smoothedPct < 15 && stage === 'down') {
+        stage = 'up'; // arm back to extended → rep complete
+        pushupCount++;
+        repCountEl.textContent = `${pushupCount} reps`;
+        flashRepBadge();
     }
 }
 
 // ==========================================================================
-// Section 9 – Draw Skeleton on Canvas
+// Section 11 – Draw Skeleton on Canvas
 // ==========================================================================
 const drawingUtils = new DrawingUtils(ctx);
 
@@ -333,7 +476,10 @@ function onPoseResult(result) {
             lineWidth: 1,
         });
 
-        processPushUp(landmarks);
+        // Dispatch to the active exercise logic
+        if (currentMode === 'pushup') processPushUp(landmarks);
+        else if (currentMode === 'plank')  processPlank(landmarks);
+        else if (currentMode === 'bicep')  processBicepCurl(landmarks);
     }
 }
 
