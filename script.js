@@ -254,24 +254,59 @@ document.querySelectorAll('.exercise-btn').forEach(btn => {
 updateGuide(currentMode);
 
 // ==========================================================================
-// Section 7 – Fullscreen
+// Section 7 – Fullscreen (with Mobile/iOS CSS Mock Fallback)
 // ==========================================================================
 const viewport = document.querySelector('.webcam-viewport');
 
-fullscreenBtn?.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-        viewport.requestFullscreen().catch(() => {});
-    } else {
-        document.exitFullscreen();
-    }
-});
+function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
 
-document.addEventListener('fullscreenchange', () => {
-    const isFs = !!document.fullscreenElement;
+function updateFullscreenIcon(isFs) {
     if (fullscreenBtn) {
         fullscreenBtn.innerHTML = isFs
             ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>`  // compress icon
             : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>`; // expand icon
+    }
+}
+
+function toggleFullscreen() {
+    const isMock = isIOS() || !viewport.requestFullscreen;
+    
+    if (isMock) {
+        const active = viewport.classList.toggle('mock-fullscreen');
+        document.body.style.overflow = active ? 'hidden' : '';
+        updateFullscreenIcon(active);
+    } else {
+        if (!document.fullscreenElement) {
+            viewport.requestFullscreen().catch(() => {
+                const active = viewport.classList.toggle('mock-fullscreen');
+                document.body.style.overflow = active ? 'hidden' : '';
+                updateFullscreenIcon(active);
+            });
+        } else {
+            document.exitFullscreen().catch(() => {});
+        }
+    }
+}
+
+fullscreenBtn?.addEventListener('click', toggleFullscreen);
+
+document.addEventListener('fullscreenchange', () => {
+    const isFs = !!document.fullscreenElement;
+    if (!isFs && viewport.classList.contains('mock-fullscreen')) {
+        viewport.classList.remove('mock-fullscreen');
+        document.body.style.overflow = '';
+    }
+    updateFullscreenIcon(isFs);
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && viewport.classList.contains('mock-fullscreen')) {
+        viewport.classList.remove('mock-fullscreen');
+        document.body.style.overflow = '';
+        updateFullscreenIcon(false);
     }
 });
 
