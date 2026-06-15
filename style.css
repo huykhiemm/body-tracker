@@ -909,7 +909,7 @@ body {
    ========================================================================== */
 .live-setup-guide {
     position: absolute;
-    top: 1rem;
+    bottom: 1rem;
     left: 1rem;
     z-index: 5;
     background: rgba(12, 13, 18, 0.85);
@@ -1171,6 +1171,280 @@ body {
 }
 
 /* ==========================================================================
+   RPG Battle HUD Mode Styles
+   ========================================================================== */
+#rpgModeBtn.rpg-on {
+    background: rgba(255, 26, 64, 0.15) !important;
+    border-color: var(--accent-color) !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px rgba(255, 26, 64, 0.25);
+    text-shadow: 0 0 8px rgba(255, 26, 64, 0.3);
+}
+
+.boss-hud-overlay {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    width: 250px;
+    background: rgba(12, 13, 18, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 26, 64, 0.2);
+    border-left: 2px solid var(--accent-color);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.8rem;
+    z-index: 5;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 26, 64, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.boss-hud-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.boss-brief {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.boss-dropdown {
+    background: var(--bg-primary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-family: var(--font-gaming);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm);
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+    text-transform: uppercase;
+    transition: border-color var(--transition-fast);
+}
+
+.boss-dropdown:hover, .boss-dropdown:focus {
+    border-color: var(--accent-color);
+}
+
+.boss-hp-numerical {
+    font-family: var(--font-gaming);
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+}
+
+.boss-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.boss-avatar {
+    font-size: 1.6rem;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+    user-select: none;
+    transition: transform 0.1s;
+}
+
+.boss-avatar.shake {
+    animation: shake-anim 0.25s ease-in-out;
+}
+
+@keyframes shake-anim {
+    0% { transform: translate(0, 0) scale(1.1); }
+    20% { transform: translate(-4px, 2px) rotate(-3deg); }
+    40% { transform: translate(4px, -2px) rotate(3deg); }
+    60% { transform: translate(-3px, -2px) rotate(-1deg); }
+    80% { transform: translate(3px, 2px) rotate(2deg); }
+    100% { transform: translate(0, 0) scale(1); }
+}
+
+.boss-hp-container {
+    flex: 1;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.boss-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff1a40 0%, #ff5c7d 100%);
+    box-shadow: 0 0 10px rgba(255, 26, 64, 0.6);
+    width: 100%;
+    transition: width 0.15s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Battle slash overlay & floating numbers */
+.battle-effects-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 6;
+    overflow: hidden;
+}
+
+.slash-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 180px;
+    height: 8px;
+    background: linear-gradient(90deg, transparent, #fff 50%, transparent);
+    box-shadow: 0 0 15px var(--accent-color), 0 0 5px #fff;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    animation: slash-anim 0.35s ease-out forwards;
+}
+
+@keyframes slash-anim {
+    0% {
+        transform: translate(-50%, -50%) rotate(var(--rot)) scaleX(0);
+        opacity: 1;
+    }
+    50% {
+        transform: translate(-50%, -50%) rotate(var(--rot)) scaleX(1.4);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(var(--rot)) scaleX(0);
+        opacity: 0;
+    }
+}
+
+.damage-text {
+    position: absolute;
+    font-family: var(--font-gaming);
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 10px var(--accent-color), 0 2px 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+    z-index: 11;
+    animation: damage-float 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes damage-float {
+    0% {
+        transform: translate(-50%, -50%) scale(0.6) translateY(0);
+        opacity: 1;
+    }
+    30% {
+        transform: translate(-50%, -50%) scale(1.3) translateY(-15px);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1) translateY(-55px);
+        opacity: 0;
+    }
+}
+
+/* Victory screen overlays */
+.victory-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(7, 7, 9, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-out;
+}
+
+.victory-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.victory-banner {
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-color);
+    border-radius: var(--radius-sm);
+    padding: 2rem 2.5rem;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(255, 26, 64, 0.3);
+    transform: scale(0.85);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.victory-overlay.show .victory-banner {
+    transform: scale(1);
+}
+
+.victory-banner h2 {
+    font-family: var(--font-gaming);
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--accent-color);
+    letter-spacing: 0.12em;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 10px rgba(255, 26, 64, 0.3);
+}
+
+.victory-banner p {
+    font-family: var(--font-gaming);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.25rem;
+}
+
+.victory-bonus {
+    font-family: var(--font-gaming);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--cyan-highlight);
+    background: rgba(0, 240, 255, 0.05);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    padding: 0.35rem 0.8rem;
+    letter-spacing: 0.08em;
+}
+
+/* ==========================================================================
+   Biometric Telemetry Chart Styles
+   ========================================================================== */
+.chart-section {
+    margin-top: 1.5rem;
+}
+
+.chart-container {
+    width: 100%;
+    height: 280px;
+    position: relative;
+}
+
+/* ==========================================================================
    Responsive Viewport Scale adjustments
    ========================================================================== */
 @media (max-width: 600px) {
@@ -1192,8 +1466,13 @@ body {
     }
     .live-setup-guide {
         width: calc(100% - 2rem);
+        bottom: 1rem !important;
+        top: auto !important;
     }
     .badge-pill span:not(.badge-label) {
         font-size: 0.95rem;
+    }
+    .boss-hud-overlay {
+        width: calc(100% - 2rem);
     }
 }

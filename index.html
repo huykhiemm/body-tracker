@@ -10,6 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN for Telemetry Graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -50,6 +52,7 @@
                 <div class="section-header">
                     <h2>SYSTEM VIEWPORT</h2>
                     <div class="header-controls">
+                        <button id="rpgModeBtn" class="btn btn-secondary" style="margin-right: 0.5rem;">🕹️ RPG MODE: OFF</button>
                         <button id="resetStatsBtn" class="btn btn-secondary" style="display: none;">RESET DATA</button>
                         <div class="status-indicator">
                             <div class="status-dot" id="statusDot"></div>
@@ -111,6 +114,40 @@
                         </div>
                     </div>
 
+                    <!-- RPG Holographic Boss HUD Overlay -->
+                    <div class="boss-hud-overlay" id="bossHud">
+                        <div class="boss-brief">
+                            <select id="bossSelect" class="boss-dropdown">
+                                <option value="0">Holo Bat 🦇 (6 HP)</option>
+                                <option value="1" selected>Cyber Slime 💧 (12 HP)</option>
+                                <option value="2">Robo Goblin 🤖 (25 HP)</option>
+                                <option value="3">Void Dragon 🐉 (60 HP)</option>
+                                <option value="4">Cyber Golem 🪨 (90 HP)</option>
+                                <option value="5">Omega Mech ⚔️ (130 HP)</option>
+                                <option value="6">Singularity Beast 👾 (200 HP)</option>
+                            </select>
+                            <div class="boss-hp-numerical"><span id="bossHpVal">12</span>/<span id="bossMaxHpVal">12</span> HP</div>
+                        </div>
+                        <div class="boss-profile">
+                            <div class="boss-avatar" id="bossAvatar">💧</div>
+                            <div class="boss-hp-container">
+                                <div class="boss-hp-fill" id="bossHpFill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Battle Effects Overlay for slashes and damage numbers -->
+                    <div class="battle-effects-overlay" id="battleEffects"></div>
+
+                    <!-- Victory Overlay Splash Screen -->
+                    <div class="victory-overlay" id="victoryOverlay">
+                        <div class="victory-banner">
+                            <h2>QUEST SECURED</h2>
+                            <p id="victoryBossName">BOSS DEFEATED!</p>
+                            <span class="victory-bonus">+500 XP // ACHIEVEMENT LOGGED</span>
+                        </div>
+                    </div>
+
                     <!-- Floating Pill Badges -->
                     <div class="viewport-badges">
                         <div class="badge-pill timer-badge">
@@ -163,6 +200,17 @@
                     <div class="activity-item loading">
                         <p>RETRIEVING ENCRYPTED WORKOUT DATA...</p>
                     </div>
+                </div>
+            </section>
+
+            <!-- Biometric Telemetry Graph Section -->
+            <section class="tracker-section chart-section">
+                <div class="section-header">
+                    <h2>WEEKLY TELEMETRY HISTOGRAM</h2>
+                    <span class="system-status">ANALYTICS ACTIVE</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="telemetryChart"></canvas>
                 </div>
             </section>
         </main>

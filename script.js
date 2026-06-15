@@ -66,6 +66,15 @@ const powerThumbEl   = document.getElementById('powerThumb');
 const powerPercentEl = document.getElementById('powerPercent');
 const repsBadgeEl    = document.querySelector('.reps-badge');
 
+// RPG Mode DOM References
+const rpgModeBtn      = document.getElementById('rpgModeBtn');
+const bossHud         = document.getElementById('bossHud');
+const bossSelect      = document.getElementById('bossSelect');
+const bossHpVal       = document.getElementById('bossHpVal');
+const bossMaxHpVal    = document.getElementById('bossMaxHpVal');
+const bossAvatar      = document.getElementById('bossAvatar');
+const bossHpFill      = document.getElementById('bossHpFill');
+
 // ==========================================================================
 // Section 3 – Camera Placement Guides (per mode)
 // ==========================================================================
@@ -136,6 +145,7 @@ function updateGuide(mode) {
 }
 
 // ==========================================================================
+// ==========================================================================
 // Section 4 – State Variables
 // ==========================================================================
 let poseLandmarker   = null;
@@ -181,6 +191,22 @@ let formFeedback = {
     message: ""
 };
 
+// RPG Mode Questline state database
+const BOSS_LIST = [
+    { name: "Holo Bat 🦇", maxHp: 6, avatar: "🦇" },
+    { name: "Cyber Slime 💧", maxHp: 12, avatar: "💧" },
+    { name: "Robo Goblin 🤖", maxHp: 25, avatar: "🤖" },
+    { name: "Void Dragon 🐉", maxHp: 60, avatar: "🐉" },
+    { name: "Cyber Golem 🪨", maxHp: 90, avatar: "🪨" },
+    { name: "Omega Mech ⚔️", maxHp: 130, avatar: "⚔️" },
+    { name: "Singularity Beast 👾", maxHp: 200, avatar: "👾" }
+];
+
+let rpgModeActive = false;
+let currentBossIndex = 1; // Default: Cyber Slime
+let bossHp = BOSS_LIST[currentBossIndex].maxHp;
+let todaySecondsOffset = 0;
+
 // ==========================================================================
 // Section 5 – Timer & Tracker Helpers
 // ==========================================================================
@@ -188,9 +214,29 @@ function startTimer() {
     clearInterval(timerInterval);
     secondsElapsed = 0;
     elapsedTimeEl.textContent = '0s';
+    
+    const todayStr = new Date().toISOString().split('T')[0];
+    const history = getTelemetryHistory();
+    todaySecondsOffset = (history[todayStr] || 0) * 60;
+    
     timerInterval = setInterval(() => {
         secondsElapsed++;
         elapsedTimeEl.textContent = `${secondsElapsed}s`;
+        
+        // Dynamically increment history in local storage and update chart in real-time
+        const currentTotalSeconds = todaySecondsOffset + secondsElapsed;
+        const currentHistory = getTelemetryHistory();
+        currentHistory[todayStr] = parseFloat((currentTotalSeconds / 60).toFixed(2));
+        localStorage.setItem('gx_telemetry_history', JSON.stringify(currentHistory));
+        
+        if (telemetryChartInstance) {
+            const sortedDates = Object.keys(currentHistory).sort();
+            const todayIndex = sortedDates.indexOf(todayStr);
+            if (todayIndex !== -1) {
+                telemetryChartInstance.data.datasets[0].data[todayIndex] = currentHistory[todayStr];
+                telemetryChartInstance.update('none'); // silent update
+            }
+        }
     }, 1000);
 }
 
@@ -818,6 +864,7 @@ function processPushUp(landmarks) {
         pushupCount++;
         repCountEl.textContent = `${pushupCount} reps`;
         flashRepBadge();
+        triggerAttack(3); // Heavy Attack
     }
 }
 
@@ -895,6 +942,7 @@ function processPlank(landmarks) {
             if (plankHoldSec > bestPlankSec) bestPlankSec = plankHoldSec;
             repCountEl.textContent = `${plankHoldSec}s hold`;
             flashRepBadge();
+            triggerAttack(1); // DoT Attack
         }, 1000);
     } else if (!inPosition && plankActive) {
         plankActive = false;
@@ -1012,6 +1060,7 @@ function processBicepCurl(landmarks) {
                 pushupCount++;
                 repCountEl.textContent = `${pushupCount} reps`;
                 flashRepBadge();
+                triggerAttack(1); // Normal Attack
             }
             bicepHoldValid = false;
             stage = 'up';
@@ -1190,3 +1239,255 @@ if (zoomBtns && viewport) {
     document.addEventListener('mousemove', dragMove);
     document.addEventListener('mouseup', dragEnd);
 }
+
+// ==========================================================================
+// Section 16 – RPG Boss Battle Questline Mechanics
+// ==========================================================================
+function updateBossHpBar() {
+    const boss = BOSS_LIST[currentBossIndex];
+    const pct = (bossHp / boss.maxHp) * 100;
+    if (bossHpFill) bossHpFill.style.width = `${pct}%`;
+    if (bossHpVal) bossHpVal.textContent = bossHp;
+    if (bossMaxHpVal) bossMaxHpVal.textContent = boss.maxHp;
+}
+
+function spawnSlashEffect() {
+    const container = document.getElementById('battleEffects');
+    if (!container) return;
+    
+    const slash = document.createElement('div');
+    slash.className = 'slash-effect';
+    const rotation = Math.random() * 360;
+    const left = 35 + Math.random() * 30;
+    const top = 35 + Math.random() * 30;
+    
+    slash.style.setProperty('--rot', `${rotation}deg`);
+    slash.style.left = `${left}%`;
+    slash.style.top = `${top}%`;
+    
+    container.appendChild(slash);
+    setTimeout(() => slash.remove(), 350);
+}
+
+function spawnDamageText(damage) {
+    const container = document.getElementById('battleEffects');
+    if (!container) return;
+    
+    const dmgText = document.createElement('div');
+    dmgText.className = 'damage-text';
+    dmgText.textContent = `-${damage} HP`;
+    const left = 35 + Math.random() * 30;
+    const top = 35 + Math.random() * 30;
+    
+    dmgText.style.left = `${left}%`;
+    dmgText.style.top = `${top}%`;
+    
+    container.appendChild(dmgText);
+    setTimeout(() => dmgText.remove(), 800);
+}
+
+function triggerVictory() {
+    const boss = BOSS_LIST[currentBossIndex];
+    const overlay = document.getElementById('victoryOverlay');
+    const bossNameEl = document.getElementById('victoryBossName');
+    
+    if (bossNameEl) bossNameEl.textContent = `${boss.name} DEFEATED!`;
+    if (overlay) {
+        overlay.classList.add('show');
+        setTimeout(() => {
+            overlay.classList.remove('show');
+            logVictoryActivity(boss);
+            bossHp = boss.maxHp;
+            updateBossHpBar();
+        }, 3000);
+    }
+}
+
+function logVictoryActivity(boss) {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    activities.unshift({
+        id: Date.now(),
+        title: `🏆 DEFEATED: ${boss.name}`,
+        time,
+        duration: 'QUEST SECURED'
+    });
+    renderActivities();
+}
+
+function triggerAttack(damage) {
+    if (!rpgModeActive || bossHp <= 0) return;
+    
+    bossHp = Math.max(0, bossHp - damage);
+    updateBossHpBar();
+    
+    if (bossAvatar) {
+        bossAvatar.classList.remove('shake');
+        void bossAvatar.offsetWidth; // Force layout recalculation
+        bossAvatar.classList.add('shake');
+    }
+    
+    spawnSlashEffect();
+    spawnDamageText(damage);
+    
+    if (bossHp <= 0) {
+        triggerVictory();
+    }
+}
+
+if (rpgModeBtn && bossHud) {
+    rpgModeBtn.addEventListener('click', () => {
+        rpgModeActive = !rpgModeActive;
+        rpgModeBtn.classList.toggle('rpg-on', rpgModeActive);
+        rpgModeBtn.textContent = rpgModeActive ? '🕹️ RPG MODE: ON' : '🕹️ RPG MODE: OFF';
+        bossHud.classList.toggle('show', rpgModeActive);
+        
+        // Collapse setup guide if RPG HUD is shown to save screen space
+        const liveSetupGuide = document.getElementById('liveSetupGuide');
+        if (liveSetupGuide) {
+            if (rpgModeActive) {
+                liveSetupGuide.classList.add('collapsed');
+            } else {
+                liveSetupGuide.classList.remove('collapsed');
+            }
+        }
+    });
+}
+
+if (bossSelect) {
+    bossSelect.addEventListener('change', (e) => {
+        currentBossIndex = parseInt(e.target.value) || 0;
+        const boss = BOSS_LIST[currentBossIndex];
+        bossHp = boss.maxHp;
+        if (bossAvatar) bossAvatar.textContent = boss.avatar;
+        updateBossHpBar();
+    });
+}
+
+// Set initial Boss HP view
+updateBossHpBar();
+
+// ==========================================================================
+// Section 17 – LocalStorage Telemetry Seeding & Chart Initialization
+// ==========================================================================
+let telemetryChartInstance = null;
+
+function getTelemetryHistory() {
+    const raw = localStorage.getItem('gx_telemetry_history');
+    if (raw) {
+        try {
+            return JSON.parse(raw);
+        } catch(e) {}
+    }
+    
+    // Seed 7 days of training time (Monday to Sunday)
+    const seeded = {};
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        seeded[dateStr] = i === 0 ? 0 : Math.floor(Math.random() * 20) + 5; // seed mock minutes
+    }
+    localStorage.setItem('gx_telemetry_history', JSON.stringify(seeded));
+    return seeded;
+}
+
+function initTelemetryChart() {
+    const canvas = document.getElementById('telemetryChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const history = getTelemetryHistory();
+    const sortedDates = Object.keys(history).sort();
+    const dataValues = sortedDates.map(d => history[d]);
+    
+    const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const displayLabels = sortedDates.map(dateStr => {
+        const d = new Date(dateStr);
+        return dayNames[d.getDay()] + ' ' + d.getDate();
+    });
+    
+    const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+    gradient.addColorStop(0, 'rgba(255, 26, 64, 0.2)');
+    gradient.addColorStop(1, 'rgba(255, 26, 64, 0.0)');
+    
+    telemetryChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: displayLabels,
+            datasets: [{
+                label: 'DAILY TRAINING DURATION (MINUTES)',
+                data: dataValues,
+                borderColor: '#ff1a40',
+                borderWidth: 2,
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: '#ff1a40',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1.5,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: '#a0a5b5',
+                        font: {
+                            family: 'Orbitron',
+                            size: 10,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#0c0d12',
+                    borderColor: '#ff1a40',
+                    borderWidth: 1,
+                    titleFont: { family: 'Orbitron', size: 11, weight: 'bold' },
+                    bodyFont: { family: 'Outfit', size: 11 },
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.parsed.y.toFixed(1)} mins`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(26, 28, 38, 0.3)'
+                    },
+                    ticks: {
+                        color: '#5e6375',
+                        font: { family: 'Orbitron', size: 9, weight: 'bold' }
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(26, 28, 38, 0.3)'
+                    },
+                    ticks: {
+                        color: '#5e6375',
+                        font: { family: 'Orbitron', size: 9 },
+                        callback: function(val) {
+                            return val + 'm';
+                        }
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 30
+                }
+            }
+        }
+    });
+}
+
+// Boot Chart.js
+initTelemetryChart();
