@@ -2,83 +2,85 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Real-time push-up counter using MediaPipe Pose tracking. Track your reps, timer, and form directly in the browser.">
-    <title>Push-Up Tracker</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
-    <!-- Google Font -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Opera GX Styled real-time pose tracking fitness tracker. Count reps, check posture, and track sessions.">
+    <title>GX Body Tracker // Pose Analyzer</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+    <!-- Google Fonts: Orbitron for Sci-Fi Gaming aesthetic, Outfit for clean UI -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="dashboard-container">
+        <!-- Header styled like a gaming UI top-bar -->
         <header class="dashboard-header">
             <div class="logo-area">
                 <div class="logo-dot"></div>
-                <h1>Tracker</h1>
+                <h1 class="gx-title">GX BODY TRACKER</h1>
+                <span class="system-status">SYS_OK // V1.2</span>
             </div>
-            <p class="subtitle">Monitor your daily activities and progress</p>
+            <p class="subtitle">REAL-TIME BIOMETRIC MOTION ANALYZER</p>
         </header>
 
         <main class="dashboard-content">
-            <!-- Summary Cards -->
+            <!-- Telemetry Cards -->
             <section class="metrics-grid">
                 <div class="metric-card">
-                    <h3>Focus Time</h3>
-                    <div class="value">4.2 <span class="unit">hrs</span></div>
-                    <div class="trend positive">↑ 12% today</div>
+                    <h3>SESSION TIME</h3>
+                    <div class="value">4.2 <span class="unit">HRS</span></div>
+                    <div class="trend positive">↑ 12% TODAY</div>
                 </div>
                 <div class="metric-card">
-                    <h3>Tasks Completed</h3>
+                    <h3>OBJECTIVES COMPLETED</h3>
                     <div class="value">8<span class="divider">/</span>12</div>
-                    <div class="trend positive">↑ 2 tasks vs yesterday</div>
+                    <div class="trend positive">↑ 2 VS YESTERDAY</div>
                 </div>
                 <div class="metric-card">
-                    <h3>Productivity Score</h3>
+                    <h3>PERFORMANCE RATING</h3>
                     <div class="value">88%</div>
-                    <div class="trend positive">High efficiency</div>
-                </div>
-            </section>
-
-            <!-- Main Interactive Section -->
-            <section class="tracker-section">
-                <div class="section-header">
-                    <h2>Recent Activities</h2>
-                    <button id="addActivityBtn" class="btn btn-primary">Add Activity</button>
-                </div>
-                
-                <div class="activity-list" id="activityList">
-                    <!-- Activities will be rendered here via script.js -->
-                    <div class="activity-item loading">
-                        <p>Initializing dashboard trackers...</p>
-                    </div>
+                    <div class="trend positive">PEAK STATE</div>
                 </div>
             </section>
 
             <!-- Real-time Pose Tracker Section -->
             <section class="tracker-section pose-tracker-container">
                 <div class="section-header">
-                    <h2>Real-time Pose Tracker</h2>
-                    <div style="display: flex; gap: 0.75rem; align-items: center;">
-                        <button id="resetStatsBtn" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); display: none;">Reset Stats</button>
+                    <h2>SYSTEM VIEWPORT</h2>
+                    <div class="header-controls">
+                        <button id="resetStatsBtn" class="btn btn-secondary" style="display: none;">RESET DATA</button>
                         <div class="status-indicator">
                             <div class="status-dot" id="statusDot"></div>
-                            <span id="statusText">Loading Pose Model...</span>
+                            <span id="statusText">LOADING POSE MODEL...</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Exercise Mode Selector -->
                 <div class="exercise-selector">
-                    <button class="exercise-btn active" data-mode="pushup">💪 Push-Up</button>
-                    <button class="exercise-btn" data-mode="plank">⏱ Plank</button>
-                    <button class="exercise-btn" data-mode="bicep">🦾 Bicep Curl</button>
+                    <button class="exercise-btn active" data-mode="pushup">💪 PUSH-UP QUEST</button>
+                    <button class="exercise-btn" data-mode="plank">⏱ PLANK RESISTANCE</button>
+                    <button class="exercise-btn" data-mode="bicep">🦾 BICEP MATRIX</button>
                 </div>
 
                 <div class="webcam-viewport">
+                    <!-- Tech HUD decorative corners -->
+                    <div class="cyber-corner top-left"></div>
+                    <div class="cyber-corner top-right"></div>
+                    <div class="cyber-corner bottom-left"></div>
+                    <div class="cyber-corner bottom-right"></div>
+
+                    <!-- Alignment Crosshair Grid -->
+                    <div class="cyber-crosshair"></div>
+                    <div class="cyber-scanline"></div>
+
+                    <!-- Drag to pan tip for mobile -->
+                    <div class="drag-hint-toast" id="dragHint">
+                        <span>Touch & drag to adjust camera view</span>
+                    </div>
+
                     <!-- Fullscreen toggle button -->
                     <button class="fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
@@ -86,34 +88,37 @@
 
                     <!-- Zoom Control Pill -->
                     <div class="zoom-control-pill" id="zoomControl">
-                        <button class="zoom-btn active" data-zoom="1">1x</button>
+                        <button class="zoom-btn active" data-zoom="1">1.0x</button>
+                        <button class="zoom-btn" data-zoom="1.25">1.25x</button>
                         <button class="zoom-btn" data-zoom="1.5">1.5x</button>
-                        <button class="zoom-btn" data-zoom="2">2x</button>
+                        <button class="zoom-btn" data-zoom="2">2.0x</button>
                     </div>
 
-                    <!-- Apple-style Floating Setup Guide -->
+                    <!-- Setup Guide -->
                     <div class="live-setup-guide" id="liveSetupGuide">
                         <div class="guide-header">
                             <span class="guide-badge-icon" id="liveGuideIcon">📲</span>
                             <div class="guide-title-text">
-                                <span class="guide-label">CAMERA PLACEMENT</span>
+                                <span class="guide-label">MISSION PARAMETERS</span>
                                 <h4 class="guide-instruction" id="liveGuideInstruction">Chest height, 1.5m away</h4>
                             </div>
-                            <button class="guide-toggle-btn" id="guideToggleBtn" title="Collapse/Expand Setup Guide">
+                            <button class="guide-toggle-btn" id="guideToggleBtn" title="Toggle parameters">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline id="toggleArrow" points="6 9 12 15 18 9"></polyline></svg>
                             </button>
                         </div>
                         <div class="guide-details" id="liveGuideDetails">
-                            <p id="liveGuideStepText">Stand 1.5m away. Make sure your hands, hips, and feet are fully visible in the frame.</p>
+                            <p id="liveGuideStepText">Align full body inside target scanner lines.</p>
                         </div>
                     </div>
 
                     <!-- Floating Pill Badges -->
                     <div class="viewport-badges">
                         <div class="badge-pill timer-badge">
+                            <span class="badge-label">TIME</span>
                             <span id="elapsedTime">0s</span>
                         </div>
                         <div class="badge-pill reps-badge">
+                            <span class="badge-label">REPS</span>
                             <span id="repCount">0 reps</span>
                         </div>
                     </div>
@@ -129,25 +134,41 @@
 
                     <video id="webcam" autoplay playsinline></video>
                     <canvas id="pose-overlay"></canvas>
+                    
                     <div class="viewport-overlay" id="viewportOverlay">
-                        <!-- Apple-style camera placement guide -->
+                        <!-- Apple-style camera placement guide with gaming graphics -->
                         <div class="placement-guide">
                             <div class="guide-icon" id="guideIcon">💪</div>
-                            <h3 class="guide-title" id="guideTitle">Push-Up Tracker</h3>
+                            <h3 class="guide-title" id="guideTitle">MOTION SCANNER</h3>
                             <ul class="guide-steps" id="guideSteps">
-                                <li><span class="guide-icon-emoji">📐</span><span>Place camera at floor level, 1–2m in front of you</span></li>
-                                <li><span class="guide-icon-emoji">👤</span><span>Full body visible — head to feet in frame</span></li>
-                                <li><span class="guide-icon-emoji">💡</span><span>Good lighting on your body, avoid backlight</span></li>
+                                <li><span class="guide-icon-emoji">📐</span><span>Place camera 1.5 meters away</span></li>
+                                <li><span class="guide-icon-emoji">👤</span><span>Ensure head-to-toe visibility</span></li>
+                                <li><span class="guide-icon-emoji">💡</span><span>Avoid strong direct backlighting</span></li>
                             </ul>
                         </div>
-                        <button id="startWebcamBtn" class="btn btn-primary">▶ Start Camera</button>
+                        <button id="startWebcamBtn" class="btn btn-primary">▶ INITIALIZE CAMERA</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activity Logging Section -->
+            <section class="tracker-section telemetry-log-section">
+                <div class="section-header">
+                    <h2>BATTLE TELEMETRY LOG</h2>
+                    <button id="addActivityBtn" class="btn btn-primary">LOG REPS</button>
+                </div>
+                
+                <div class="activity-list" id="activityList">
+                    <!-- Activities will be rendered here via script.js -->
+                    <div class="activity-item loading">
+                        <p>RETRIEVING ENCRYPTED WORKOUT DATA...</p>
                     </div>
                 </div>
             </section>
         </main>
 
         <footer class="dashboard-footer">
-            <p>&copy; 2026 Tracker App. Built with style and precision.</p>
+            <p>// GX BODY SCANNER ENGINE // CODENAME: ANTIGRAVITY IDE</p>
         </footer>
     </div>
 

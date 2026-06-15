@@ -336,8 +336,8 @@ async function initializePoseModel() {
     } catch (err) {
         console.error('[Tracker] Model init failed:', err);
         statusText.textContent     = 'Model Error';
-        statusDot.style.background = '#ef4444';
-        statusDot.style.boxShadow  = '0 0 8px #ef4444';
+        statusDot.style.background = '#ff1a40';
+        statusDot.style.boxShadow  = '0 0 8px #ff1a40';
     }
 }
 
@@ -357,6 +357,7 @@ async function startCamera() {
 
             webcamRunning = true;
             viewportOverlay.classList.add('hidden');
+            viewport.classList.add('camera-active');
             statusDot.className        = 'status-dot active';
             statusText.textContent     = 'Tracking Active';
             startWebcamBtn.textContent = 'Stop Camera';
@@ -394,6 +395,7 @@ function stopCamera() {
     if (powerThumbEl) powerThumbEl.style.bottom = '0%';
 
     viewportOverlay.classList.remove('hidden');
+    viewport.classList.remove('camera-active');
     statusDot.className        = 'status-dot ready';
     statusText.textContent     = 'Pose Model Ready';
     startWebcamBtn.textContent = 'Start Camera';
@@ -460,10 +462,10 @@ const SKELETON_CONNECTIONS = [
 ];
 
 const JOINT_COLORS = {
-    11: '#3b82f6', 13: '#3b82f6', 15: '#3b82f6', // Left arm (blue)
-    12: '#ec4899', 14: '#ec4899', 16: '#ec4899', // Right arm (pink)
-    23: '#10b981', 24: '#10b981',                 // Hips (emerald)
-    25: '#f59e0b', 27: '#f59e0b',                 // Left leg (amber)
+    11: '#00f0ff', 13: '#00f0ff', 15: '#00f0ff', // Left arm (cyan)
+    12: '#ff1a40', 14: '#ff1a40', 16: '#ff1a40', // Right arm (neon red)
+    23: '#00ff88', 24: '#00ff88',                 // Hips (neon green)
+    25: '#facc15', 27: '#facc15',                 // Left leg (amber)
     26: '#a855f7', 28: '#a855f7',                 // Right leg (purple)
 };
 
@@ -477,7 +479,7 @@ function drawHUDLabel(ctx, x, y, text, isWarning = false) {
     const rectHeight = 20;
     
     // Draw background pill
-    ctx.fillStyle = isWarning ? 'rgba(239, 68, 68, 0.9)' : 'rgba(16, 185, 129, 0.9)';
+    ctx.fillStyle = isWarning ? 'rgba(255, 26, 64, 0.9)' : 'rgba(0, 255, 136, 0.9)';
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.lineWidth = 1.5;
     
@@ -572,7 +574,7 @@ function drawColoredSkeleton(landmarks) {
             const isCurlingArm = (conn.type === 'leftArm' && activeSide === 'left') ||
                                  (conn.type === 'rightArm' && activeSide === 'right');
             if (isCurlingArm) {
-                strokeColor = bicepHoldValid ? '#10b981' : (bicepHoldStart ? '#facc15' : '#3b82f6');
+                strokeColor = bicepHoldValid ? '#00ff88' : (bicepHoldStart ? '#facc15' : '#00f0ff');
                 lineWidth = 5;
                 isHighlighted = true;
             }
@@ -583,7 +585,7 @@ function drawColoredSkeleton(landmarks) {
                                      (conn.type === 'leftLeg' && activeSide === 'left') ||
                                      (conn.type === 'rightLeg' && activeSide === 'right');
             if (isActiveSideBody) {
-                strokeColor = formFeedback.isValid ? '#10b981' : '#ef4444';
+                strokeColor = formFeedback.isValid ? '#00ff88' : '#ff1a40';
                 lineWidth = 5;
                 isHighlighted = true;
             }
@@ -686,13 +688,13 @@ function drawColoredSkeleton(landmarks) {
 
                 ctx.beginPath();
                 ctx.arc(ex, ey, 18, -Math.PI / 2, -Math.PI / 2 + bicepHoldProgress * Math.PI * 2);
-                ctx.strokeStyle = bicepHoldValid ? '#10b981' : '#facc15';
+                ctx.strokeStyle = bicepHoldValid ? '#00ff88' : '#facc15';
                 ctx.lineWidth = 4;
                 ctx.stroke();
 
                 ctx.save();
                 ctx.font = 'bold 9px Outfit, sans-serif';
-                ctx.fillStyle = bicepHoldValid ? '#10b981' : '#facc15';
+                ctx.fillStyle = bicepHoldValid ? '#00ff88' : '#facc15';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
                 if (bicepHoldProgress < 1) {
@@ -801,7 +803,7 @@ function processPushUp(landmarks) {
     const fillEl = document.getElementById('powerFill');
     if (fillEl) {
         if (!formFeedback.isValid) {
-            fillEl.style.background = '#ef4444'; // Red warning
+            fillEl.style.background = '#ff1a40'; // Red warning
         } else {
             fillEl.style.background = '';
         }
@@ -874,7 +876,7 @@ function processPlank(landmarks) {
     const fillEl = document.getElementById('powerFill');
     if (fillEl) {
         if (!formFeedback.isValid) {
-            fillEl.style.background = '#ef4444'; // Red warning
+            fillEl.style.background = '#ff1a40'; // Red warning
         } else {
             fillEl.style.background = '';
         }
@@ -1063,18 +1065,128 @@ if (guideToggleBtn && liveSetupGuide) {
     });
 }
 
-// Digital Zoom Selection
+// ==========================================================================
+// Section 15 – Digital Zoom & Drag-Pan Controls (Mobile & Desktop)
+// ==========================================================================
 const zoomBtns = document.querySelectorAll('.zoom-btn');
-const viewportEl = document.querySelector('.webcam-viewport');
+const dragHint = document.getElementById('dragHint');
 
-if (zoomBtns && viewportEl) {
+let zoomFactor = 1.0;
+let panX = 0;
+let panY = 0;
+
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let basePanX = 0;
+let basePanY = 0;
+let hintTimeout = null;
+
+function showDragHintToast() {
+    if (!dragHint) return;
+    dragHint.classList.add('show');
+    if (hintTimeout) clearTimeout(hintTimeout);
+    hintTimeout = setTimeout(() => {
+        dragHint.classList.remove('show');
+    }, 3500);
+}
+
+function updateViewportTransform() {
+    if (!viewport) return;
+    viewport.style.setProperty('--zoom-factor', zoomFactor);
+    viewport.style.setProperty('--pan-x', `${panX}px`);
+    viewport.style.setProperty('--pan-y', `${panY}px`);
+}
+
+function resetPanning() {
+    panX = 0;
+    panY = 0;
+    updateViewportTransform();
+}
+
+if (zoomBtns && viewport) {
     zoomBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             zoomBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            const zoomVal = btn.dataset.zoom;
-            viewportEl.style.setProperty('--zoom-factor', zoomVal);
+            
+            const prevZoom = zoomFactor;
+            zoomFactor = parseFloat(btn.dataset.zoom) || 1.0;
+            
+            if (zoomFactor === 1.0) {
+                resetPanning();
+            } else {
+                clampAndApplyPan(panX, panY);
+                if (prevZoom === 1.0) {
+                    showDragHintToast();
+                }
+            }
         });
     });
+
+    function clampAndApplyPan(targetX, targetY) {
+        const w = viewport.clientWidth;
+        const h = viewport.clientHeight;
+        
+        // Max translation limit in local coordinate space (px):
+        // limit = (1 - 1 / zoom) * size / 2
+        const limitX = zoomFactor > 1.0 ? ((1 - 1 / zoomFactor) * w) / 2 : 0;
+        const limitY = zoomFactor > 1.0 ? ((1 - 1 / zoomFactor) * h) / 2 : 0;
+        
+        panX = Math.max(-limitX, Math.min(limitX, targetX));
+        panY = Math.max(-limitY, Math.min(limitY, targetY));
+        
+        updateViewportTransform();
+    }
+
+    function dragStart(e) {
+        if (zoomFactor <= 1.0) return;
+        
+        isDragging = true;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        startX = clientX;
+        startY = clientY;
+        basePanX = panX;
+        basePanY = panY;
+        
+        viewport.style.cursor = 'grabbing';
+    }
+
+    function dragMove(e) {
+        if (!isDragging) return;
+        
+        if (e.cancelable) e.preventDefault();
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
+        
+        // Translate relative to scale and mirror:
+        // x moves negative because of scaleX(-1) mirror translation
+        const localDeltaX = -deltaX / zoomFactor;
+        const localDeltaY = deltaY / zoomFactor;
+        
+        clampAndApplyPan(basePanX + localDeltaX, basePanY + localDeltaY);
+    }
+
+    function dragEnd() {
+        isDragging = false;
+        viewport.style.cursor = '';
+    }
+
+    // Touch Event Listeners
+    viewport.addEventListener('touchstart', dragStart, { passive: false });
+    viewport.addEventListener('touchmove', dragMove, { passive: false });
+    viewport.addEventListener('touchend', dragEnd);
+    viewport.addEventListener('touchcancel', dragEnd);
+
+    // Mouse Event Listeners
+    viewport.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', dragMove);
+    document.addEventListener('mouseup', dragEnd);
 }

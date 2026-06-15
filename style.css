@@ -1,40 +1,48 @@
 /* ==========================================================================
-   Design System & Custom Properties
+   Opera GX Redesign Design System
    ========================================================================== */
 :root {
-    --bg-primary: #0a0a0c;
-    --bg-secondary: #121216;
-    --bg-tertiary: #1a1a22;
+    /* Cyber Gaming Color Palette */
+    --bg-primary: #070709;
+    --bg-secondary: #0c0d12;
+    --bg-tertiary: #13151f;
     
-    --accent-color: #6366f1;
-    --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    --accent-glow: rgba(99, 102, 241, 0.15);
+    --accent-color: #ff1a40; /* Opera GX Signature Crimson */
+    --accent-gradient: linear-gradient(135deg, #ff1a40 0%, #fa1e4e 50%, #b90875 100%);
+    --accent-glow: rgba(255, 26, 64, 0.25);
     
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
+    --cyan-highlight: #00f0ff; /* Dynamic tracker tracking color */
+    --cyan-glow: rgba(0, 240, 255, 0.2);
     
-    --border-color: #262630;
-    --border-hover: #3b3b4f;
+    --text-primary: #f5f6f9;
+    --text-secondary: #a0a5b5;
+    --text-muted: #5e6375;
     
-    --success: #10b981;
-    --success-bg: rgba(16, 185, 129, 0.1);
+    --border-color: #1a1c26;
+    --border-hover: #ff1a40;
     
-    --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --success: #00ff88;
+    --success-bg: rgba(0, 255, 136, 0.08);
+    --warning: #facc15;
+    --error: #ff1a40;
     
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-gaming: 'Orbitron', 'Outfit', sans-serif;
     
-    --radius-sm: 8px;
-    --radius-md: 14px;
-    --radius-lg: 20px;
+    --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.6);
+    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.8);
+    --neon-glow: 0 0 15px rgba(255, 26, 64, 0.35);
     
-    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius-sm: 4px; /* Sharp gaming corners */
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    
+    --transition-fast: 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --transition-normal: 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 /* ==========================================================================
-   Reset & Base Styles
+   Reset & Gaming Scrollbar
    ========================================================================== */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -42,8 +50,27 @@
     padding: 0;
 }
 
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+    border: 1px solid var(--bg-primary);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+
 body {
     background-color: var(--bg-primary);
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(255, 26, 64, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.03) 0%, transparent 40%);
     color: var(--text-primary);
     font-family: var(--font-sans);
     line-height: 1.5;
@@ -51,350 +78,508 @@ body {
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    padding: 2rem 1rem;
+    padding: 3rem 1.5rem;
 }
 
 /* ==========================================================================
-   Layout & Dashboard Container
+   Layout Container
    ========================================================================== */
 .dashboard-container {
     width: 100%;
-    max-width: 900px;
+    max-width: 960px;
     display: flex;
     flex-direction: column;
-    gap: 2.5rem;
+    gap: 3rem;
 }
 
-/* Header */
+/* Gaming Top Bar Header */
 .dashboard-header {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.35rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+    position: relative;
+}
+
+.dashboard-header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 120px;
+    height: 2px;
+    background: var(--accent-gradient);
+    box-shadow: 0 0 10px var(--accent-color);
 }
 
 .logo-area {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
 }
 
 .logo-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--accent-gradient);
-    box-shadow: 0 0 12px var(--accent-color);
+    width: 12px;
+    height: 12px;
+    background: var(--accent-color);
+    box-shadow: 0 0 12px var(--accent-color), 0 0 4px var(--accent-color);
+    transform: rotate(45deg);
 }
 
-.dashboard-header h1 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    background: var(--accent-gradient);
+.gx-title {
+    font-family: var(--font-gaming);
+    font-size: 2.1rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    background: linear-gradient(90deg, #fff 0%, #a0a5b5 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.system-status {
+    font-family: var(--font-gaming);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    border: 1px solid rgba(255, 26, 64, 0.3);
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 26, 64, 0.05);
+    margin-left: 0.5rem;
+    letter-spacing: 0.1em;
 }
 
 .subtitle {
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-family: var(--font-gaming);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    opacity: 0.7;
 }
 
 /* Content Area */
 .dashboard-content {
     display: flex;
     flex-direction: column;
-    gap: 2.5rem;
+    gap: 3rem;
 }
 
 /* ==========================================================================
-   Metrics Grid & Cards
+   Telemetry Cards (Metrics Grid)
    ========================================================================== */
 .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
 }
 
 .metric-card {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-left: 3px solid var(--border-color);
     padding: 1.5rem;
     box-shadow: var(--shadow-sm);
-    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-normal);
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, transparent 50%, var(--border-color) 50%);
+    transition: background var(--transition-fast);
 }
 
 .metric-card:hover {
+    border-color: rgba(255, 26, 64, 0.25);
+    border-left-color: var(--accent-color);
+    box-shadow: var(--shadow-md), 0 0 15px rgba(255, 26, 64, 0.05);
     transform: translateY(-2px);
-    border-color: var(--border-hover);
-    box-shadow: var(--shadow-md);
+}
+
+.metric-card:hover::before {
+    background: linear-gradient(135deg, transparent 50%, var(--accent-color) 50%);
 }
 
 .metric-card h3 {
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-family: var(--font-gaming);
+    font-size: 0.8rem;
+    font-weight: 700;
     color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.75rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.85rem;
 }
 
 .metric-card .value {
-    font-size: 2.2rem;
-    font-weight: 700;
+    font-family: var(--font-gaming);
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: #fff;
     margin-bottom: 0.5rem;
     letter-spacing: -0.01em;
+    display: flex;
+    align-items: baseline;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
 }
 
 .metric-card .unit {
-    font-size: 1.1rem;
-    font-weight: 400;
-    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-left: 0.25rem;
+    letter-spacing: 0.05em;
 }
 
 .metric-card .divider {
     color: var(--text-muted);
-    margin: 0 0.2rem;
+    margin: 0 0.3rem;
 }
 
 .metric-card .trend {
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-family: var(--font-gaming);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
 }
 
 .metric-card .trend.positive {
     color: var(--success);
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
 }
 
 /* ==========================================================================
-   Interactive Tracker Section
+   Futuristic Tracker Panels
    ========================================================================== */
 .tracker-section {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 2rem;
-    box-shadow: var(--shadow-sm);
+    padding: 2.2rem;
+    box-shadow: var(--shadow-md);
+    position: relative;
+}
+
+/* Hexagon Corner Aesthetics for Section */
+.tracker-section::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 16px;
+    height: 16px;
+    border-top: 2px solid var(--accent-color);
+    border-left: 2px solid var(--accent-color);
 }
 
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.85rem;
 }
 
 .section-header h2 {
-    font-size: 1.3rem;
-    font-weight: 600;
+    font-family: var(--font-gaming);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #fff;
 }
 
-/* Buttons */
+.header-controls {
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+}
+
+/* Buttons Styling */
 .btn {
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.6rem 1.2rem;
+    font-family: var(--font-gaming);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.65rem 1.4rem;
     border-radius: var(--radius-sm);
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
+    text-transform: uppercase;
     transition: all var(--transition-fast);
 }
 
 .btn-primary {
-    background: var(--accent-gradient);
-    color: var(--text-primary);
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+    background: var(--accent-color);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 26, 64, 0.2);
 }
 
 .btn-primary:hover {
+    background: #ff3355;
+    box-shadow: 0 0 18px rgba(255, 26, 64, 0.45);
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-    filter: brightness(1.1);
 }
 
-.btn-primary:active {
+.btn-secondary {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+.btn-secondary:hover {
+    border-color: var(--accent-color);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 26, 64, 0.1);
+}
+
+.btn:active {
     transform: translateY(1px);
 }
 
-/* Activity Items */
-.activity-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.activity-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    padding: 1rem 1.25rem;
-    transition: all var(--transition-fast);
-}
-
-.activity-item:hover {
-    border-color: var(--border-hover);
-    transform: translateX(4px);
-}
-
-.activity-item.loading {
-    justify-content: center;
-    color: var(--text-secondary);
-    font-style: italic;
-    border-style: dashed;
-}
-
-.activity-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.activity-title {
-    font-weight: 500;
-}
-
-.activity-time {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-.activity-duration {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    padding: 0.25rem 0.6rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--accent-color);
-}
-
 /* ==========================================================================
-   Footer
-   ========================================================================== */
-.dashboard-footer {
-    text-align: center;
-    margin-top: 1rem;
-    color: var(--text-muted);
-    font-size: 0.8rem;
-}
-
-/* ==========================================================================
-   Exercise Mode Selector
+   Exercise Mode Switcher
    ========================================================================== */
 .exercise-selector {
     display: flex;
-    gap: 0.4rem;
-    background: var(--bg-tertiary);
+    gap: 0.65rem;
+    background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0.3rem;
-    margin-bottom: 1.25rem;
+    padding: 0.35rem;
+    margin-bottom: 1.75rem;
 }
 
 .exercise-btn {
     flex: 1;
-    font-family: var(--font-sans);
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.55rem 0.5rem;
-    border-radius: 10px;
-    border: none;
+    font-family: var(--font-gaming);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
     cursor: pointer;
     background: transparent;
     color: var(--text-secondary);
     transition: all var(--transition-fast);
-    white-space: nowrap;
-    letter-spacing: 0.01em;
+    text-transform: uppercase;
 }
 
 .exercise-btn:hover {
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.02);
+    color: #fff;
 }
 
 .exercise-btn.active {
-    background: var(--accent-gradient);
+    background: rgba(255, 26, 64, 0.08);
+    border-color: var(--accent-color);
     color: #fff;
-    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 15px rgba(255, 26, 64, 0.2);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
-/* ==========================================================================
-   Real-time Pose Tracker Styles
-   ========================================================================== */
-.pose-tracker-container {
-    display: flex;
-    flex-direction: column;
-}
-
+/* Status Lights */
 .status-indicator {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
+    gap: 0.65rem;
+    font-family: var(--font-gaming);
+    font-size: 0.72rem;
+    font-weight: 700;
     color: var(--text-secondary);
     background-color: var(--bg-tertiary);
-    padding: 0.4rem 0.8rem;
+    padding: 0.45rem 1rem;
     border-radius: 20px;
     border: 1px solid var(--border-color);
+    letter-spacing: 0.05em;
 }
 
 .status-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background-color: #ef4444; /* Red for loading/error */
-    box-shadow: 0 0 8px #ef4444;
-    transition: all var(--transition-fast);
+    background-color: var(--error);
+    box-shadow: 0 0 8px var(--error);
+    transition: all var(--transition-normal);
 }
 
 .status-dot.ready {
-    background-color: #eab308; /* Yellow for ready, waiting for camera */
-    box-shadow: 0 0 8px #eab308;
+    background-color: var(--warning);
+    box-shadow: 0 0 8px var(--warning);
 }
 
 .status-dot.active {
-    background-color: var(--success); /* Green for streaming */
-    box-shadow: 0 0 8px var(--success);
-    animation: status-pulse 1.5s infinite alternate;
+    background-color: var(--cyan-highlight);
+    box-shadow: 0 0 8px var(--cyan-highlight);
+    animation: status-pulse 1.2s infinite alternate ease-in-out;
 }
 
 @keyframes status-pulse {
     0% {
         transform: scale(0.9);
-        box-shadow: 0 0 4px var(--success);
+        box-shadow: 0 0 4px var(--cyan-highlight);
     }
     100% {
-        transform: scale(1.1);
-        box-shadow: 0 0 12px var(--success);
+        transform: scale(1.15);
+        box-shadow: 0 0 12px var(--cyan-highlight);
     }
 }
 
+/* ==========================================================================
+   Real-time Cyber Viewport
+   ========================================================================== */
 .webcam-viewport {
     position: relative;
     width: 100%;
     max-width: 640px;
     aspect-ratio: 4 / 3;
-    margin: 1rem auto 0 auto;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    background-color: #050507;
+    margin: 0 auto;
+    background-color: #030305;
     border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    z-index: 1;
 }
 
+/* Viewport Border glow when camera is active */
+.webcam-viewport.camera-active {
+    border-color: rgba(255, 26, 64, 0.45);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 26, 64, 0.1);
+}
+
+/* HTML Viewport HUD Overlay Elements */
+.cyber-corner {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--accent-color);
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0.65;
+}
+.cyber-corner.top-left {
+    top: 10px;
+    left: 10px;
+    border-right: none;
+    border-bottom: none;
+}
+.cyber-corner.top-right {
+    top: 10px;
+    right: 10px;
+    border-left: none;
+    border-bottom: none;
+}
+.cyber-corner.bottom-left {
+    bottom: 10px;
+    left: 10px;
+    border-right: none;
+    border-top: none;
+}
+.cyber-corner.bottom-right {
+    bottom: 10px;
+    right: 10px;
+    border-left: none;
+    border-top: none;
+}
+
+/* Alignment Overlay Crosshair Grid */
+.cyber-crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 130px;
+    height: 130px;
+    border: 1px dashed rgba(255, 26, 64, 0.12);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+}
+.cyber-crosshair::before,
+.cyber-crosshair::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 26, 64, 0.15);
+}
+.cyber-crosshair::before {
+    top: 50%;
+    left: -15px;
+    right: -15px;
+    height: 1px;
+}
+.cyber-crosshair::after {
+    left: 50%;
+    top: -15px;
+    bottom: -15px;
+    width: 1px;
+}
+
+/* Scanline animation */
+.cyber-scanline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to bottom, transparent, rgba(255, 26, 64, 0.18), transparent);
+    z-index: 3;
+    pointer-events: none;
+    animation: scan 8s linear infinite;
+}
+
+@keyframes scan {
+    0% {
+        top: 0%;
+    }
+    100% {
+        top: 100%;
+    }
+}
+
+/* Drag hint for mobile panning */
+.drag-hint-toast {
+    position: absolute;
+    bottom: 4.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    z-index: 10;
+    background: rgba(12, 13, 18, 0.9);
+    border: 1px solid var(--accent-color);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 10px rgba(255, 26, 64, 0.2);
+}
+.drag-hint-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.drag-hint-toast span {
+    font-family: var(--font-gaming);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Webcam and Canvas scaling support (with Panning variables) */
 #webcam {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
-    transform: scaleX(-1) scale(var(--zoom-factor, 1)); /* Mirror and scale camera feed */
     transform-origin: center center;
-    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    transform: scaleX(-1) scale(var(--zoom-factor, 1)) translate(var(--pan-x, 0px), var(--pan-y, 0px));
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 #pose-overlay {
@@ -404,12 +589,13 @@ body {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    transform: scaleX(-1) scale(var(--zoom-factor, 1)); /* Mirror and scale overlays */
-    transform-origin: center center;
     z-index: 2;
-    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    transform-origin: center center;
+    transform: scaleX(-1) scale(var(--zoom-factor, 1)) translate(var(--pan-x, 0px), var(--pan-y, 0px));
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
+/* Glassmorphic Viewport Initializer Overlay */
 .viewport-overlay {
     position: absolute;
     top: 0;
@@ -417,11 +603,12 @@ body {
     width: 100%;
     height: 100%;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(10, 10, 12, 0.85);
+    background-color: rgba(7, 7, 9, 0.85);
     backdrop-filter: blur(8px);
-    z-index: 3;
+    z-index: 5;
     transition: opacity var(--transition-normal);
 }
 
@@ -430,8 +617,55 @@ body {
     pointer-events: none;
 }
 
+/* Tech Setup Guide Instructions card */
+.placement-guide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+    max-width: 380px;
+    padding: 0 1.5rem;
+    text-align: center;
+}
+
+.guide-icon {
+    font-size: 2.2rem;
+    filter: drop-shadow(0 0 8px var(--accent-color));
+}
+
+.guide-title {
+    font-family: var(--font-gaming);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.guide-steps {
+    list-style: none;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.guide-steps li {
+    display: flex;
+    gap: 0.65rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+.guide-icon-emoji {
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
 /* ==========================================================================
-   AR Overlay Badges & Power Bar
+   AR Floating Telemetry Overlay Badges
    ========================================================================== */
 .viewport-badges {
     position: absolute;
@@ -439,40 +673,90 @@ body {
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 0.6rem;
+    gap: 0.65rem;
     z-index: 4;
     pointer-events: none;
-    white-space: nowrap;
 }
 
 .badge-pill {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0.45rem 1.1rem;
-    background: rgba(55, 55, 60, 0.88);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: none;
-    border-radius: 50px;
-    color: #f0f0f0;
-    font-weight: 700;
-    font-size: 1.05rem;
-    letter-spacing: 0.01em;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    padding: 0.35rem 1.25rem;
+    background: rgba(12, 13, 18, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+.badge-pill .badge-label {
+    font-family: var(--font-gaming);
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    margin-bottom: 2px;
+}
 
+.badge-pill span:not(.badge-label) {
+    font-family: var(--font-gaming);
+    font-size: 1.15rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    color: #fff;
+}
 
-/* Power Bar Container */
+/* Specific highlight color to differentiate timer and reps count */
+.timer-badge span:not(.badge-label) {
+    color: var(--cyan-highlight);
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+}
+
+.reps-badge span:not(.badge-label) {
+    color: var(--accent-color);
+    text-shadow: 0 0 8px rgba(255, 26, 64, 0.25);
+}
+
+/* Epic LEVEL UP flash animation for Rep Badge */
+@keyframes badge-level-up {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 26, 64, 0.8);
+        border-color: var(--accent-color);
+        background: rgba(255, 26, 64, 0.8);
+    }
+    40% {
+        transform: scale(1.28);
+        box-shadow: 0 0 30px 8px rgba(255, 26, 64, 0.9);
+        border-color: #fff;
+        background: rgba(255, 26, 64, 0.95);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        border-color: rgba(255, 255, 255, 0.08);
+        background: rgba(12, 13, 18, 0.82);
+    }
+}
+
+.badge-pill.flash-active {
+    animation: badge-level-up 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* ==========================================================================
+   Power Bar Biometric HUD
+   ========================================================================== */
 .power-bar-wrapper {
     position: absolute;
-    right: 0.6rem;
+    right: 0.75rem;
     top: 1rem;
     bottom: 1rem;
-    width: 46px;
+    width: 44px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -480,189 +764,183 @@ body {
     pointer-events: none;
 }
 
-/* Percentage label sits at the top of the bar wrapper */
 .power-bar-label {
-    color: #f0f0f0;
-    font-size: 0.8rem;
+    color: #fff;
+    font-family: var(--font-gaming);
+    font-size: 0.7rem;
     font-weight: 700;
     margin-bottom: 0.4rem;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     text-align: center;
     width: 100%;
 }
 
 .power-bar-container {
     flex: 1;
-    width: 18px;
-    background: rgba(30, 30, 35, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 30px;
-    overflow: visible; /* allow thumb to slightly overflow */
+    width: 14px;
+    background: rgba(12, 13, 18, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
     position: relative;
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
-/* The filled track (grows from bottom) */
 .power-bar-fill {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
     height: 0%;
-    background: rgba(80, 80, 90, 0.55);
-    border-radius: 30px;
-    transition: height 0.08s ease-out;
+    background: var(--accent-gradient);
+    box-shadow: 0 0 10px rgba(255, 26, 64, 0.3);
+    border-radius: 4px;
+    transition: height 0.08s ease-out, background-color 0.2s;
 }
 
-/* White sliding thumb indicator */
 .power-bar-thumb {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    width: 26px;
-    height: 6px;
-    background: #e74c3c;
-    border-radius: 4px;
+    width: 20px;
+    height: 4px;
+    background: #fff;
+    border-radius: 2px;
     bottom: 0%;
     transition: bottom 0.08s ease-out;
-    box-shadow: 0 0 8px rgba(231, 76, 60, 0.7);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
-/* Animations */
-@keyframes badge-flash {
+/* Bicep Curl contract active hold pulse */
+.power-bar-fill.holding {
+    background: linear-gradient(to top, var(--warning) 0%, #fff 100%) !important;
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.8);
+    animation: holding-pulse 1s infinite alternate ease-in-out;
+}
+
+@keyframes holding-pulse {
     0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-        border-color: var(--success);
-    }
-    50% {
-        transform: scale(1.15);
-        box-shadow: 0 0 25px 5px rgba(16, 185, 129, 0.8);
-        border-color: #ffffff;
+        filter: brightness(0.95);
     }
     100% {
-        transform: scale(1);
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
-        border-color: rgba(255, 255, 255, 0.08);
+        filter: brightness(1.2) saturate(1.1);
     }
-}
-
-.badge-pill.flash-active {
-    animation: badge-flash 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* ==========================================================================
-   New Visual Overlay Components (Fullscreen, Zoom, Setup Guide, Holding)
+   Interactive HUD Controls
    ========================================================================== */
 
-/* Fullscreen Button Override */
+/* Fullscreen control toggle */
 .fullscreen-btn {
     position: absolute;
     top: 1rem;
     right: 1rem;
     z-index: 5;
-    background: rgba(20, 20, 25, 0.7);
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
+    background: rgba(12, 13, 18, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-fast);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .fullscreen-btn:hover {
-    background: rgba(45, 45, 55, 0.85);
-    border-color: rgba(255, 255, 255, 0.25);
-    transform: scale(1.08);
+    background: rgba(255, 26, 64, 0.1);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(255, 26, 64, 0.2);
+    transform: scale(1.05);
 }
 
 .fullscreen-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
 }
 
-/* Digital Zoom Pill */
+/* Floating Zoom Selection Bar */
 .zoom-control-pill {
     position: absolute;
     bottom: 1rem;
     right: 1rem;
     z-index: 5;
-    background: rgba(20, 20, 25, 0.7);
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 30px;
+    background: rgba(12, 13, 18, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
     display: flex;
     padding: 3px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .zoom-btn {
     background: transparent;
     border: none;
     color: var(--text-secondary);
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-family: var(--font-gaming);
+    font-size: 0.72rem;
     font-weight: 700;
-    padding: 0.35rem 0.65rem;
-    border-radius: 20px;
+    padding: 0.45rem 0.65rem;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all var(--transition-fast);
 }
 
 .zoom-btn:hover {
-    color: var(--text-primary);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .zoom-btn.active {
-    background: var(--accent-gradient);
+    background: var(--accent-color);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 10px rgba(255, 26, 64, 0.3);
 }
 
-/* Apple Fitness-style Floating Setup Guide Widget */
+/* ==========================================================================
+   Quest Style Floating Parameter Guide
+   ========================================================================== */
 .live-setup-guide {
     position: absolute;
     top: 1rem;
     left: 1rem;
     z-index: 5;
-    background: rgba(20, 20, 25, 0.72);
-    backdrop-filter: blur(20px) saturate(190%);
-    -webkit-backdrop-filter: blur(20px) saturate(190%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--radius-md);
+    background: rgba(12, 13, 18, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 2px solid var(--accent-color);
+    border-radius: var(--radius-sm);
     width: 250px;
-    padding: 0.8rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-    transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+    padding: 0.75rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     max-height: 180px;
     overflow: hidden;
 }
 
 .live-setup-guide.collapsed {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     padding: 0;
-    border-radius: 50%;
+    border-radius: var(--radius-sm);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
     cursor: pointer;
 }
 
 .live-setup-guide.collapsed:hover {
-    background: rgba(35, 35, 45, 0.85);
-    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 26, 64, 0.1);
+    border-color: var(--accent-color);
     transform: scale(1.05);
 }
 
@@ -680,7 +958,7 @@ body {
 }
 
 .live-setup-guide.collapsed .guide-badge-icon {
-    font-size: 1.15rem;
+    font-size: 1rem;
     margin: 0;
     background: transparent;
     width: auto;
@@ -702,16 +980,16 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.6rem;
+    gap: 0.5rem;
     position: relative;
 }
 
 .guide-badge-icon {
-    font-size: 1.25rem;
-    background: rgba(255, 255, 255, 0.08);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.04);
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -726,17 +1004,18 @@ body {
 }
 
 .guide-label {
-    font-size: 0.65rem;
+    font-family: var(--font-gaming);
+    font-size: 0.58rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     color: var(--accent-color);
     text-transform: uppercase;
 }
 
 .guide-instruction {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #fff;
     line-height: 1.25;
 }
 
@@ -744,8 +1023,8 @@ body {
     background: transparent;
     border: none;
     color: var(--text-secondary);
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -755,14 +1034,14 @@ body {
 }
 
 .guide-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-primary);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .guide-toggle-btn svg {
-    width: 14px;
-    height: 14px;
-    transition: transform 0.3s ease;
+    width: 12px;
+    height: 12px;
+    transition: transform 0.25s ease;
 }
 
 .live-setup-guide.collapsed #toggleArrow {
@@ -770,31 +1049,17 @@ body {
 }
 
 .guide-details {
-    margin-top: 0.6rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    font-size: 0.7rem;
+    margin-top: 0.5rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.68rem;
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.35;
 }
 
-/* Power Bar Holding/Active State styling */
-.power-bar-fill.holding {
-    background: linear-gradient(to top, #eab308 0%, #facc15 100%) !important;
-    box-shadow: 0 0 16px rgba(234, 179, 8, 0.8);
-    animation: holding-pulse 1.2s infinite alternate ease-in-out;
-}
-
-@keyframes holding-pulse {
-    0% {
-        filter: brightness(0.95);
-    }
-    100% {
-        filter: brightness(1.2) saturate(1.1);
-    }
-}
-
-/* Mock Fullscreen Fallback Layout */
+/* ==========================================================================
+   Full Screen System Viewport Layout
+   ========================================================================== */
 .webcam-viewport.mock-fullscreen {
     position: fixed !important;
     top: 0 !important;
@@ -816,3 +1081,119 @@ body {
     object-fit: cover !important;
 }
 
+/* ==========================================================================
+   Battle Telemetry Logs Section
+   ========================================================================== */
+.telemetry-log-section {
+    position: relative;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1.15rem;
+    transition: all var(--transition-fast);
+}
+
+.activity-item:hover {
+    border-color: rgba(255, 26, 64, 0.35);
+    background-color: rgba(255, 26, 64, 0.01);
+    transform: translateX(3px);
+}
+
+.activity-item.loading {
+    justify-content: center;
+    color: var(--text-muted);
+    font-family: var(--font-gaming);
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-style: dashed;
+}
+
+.activity-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.activity-title {
+    font-family: var(--font-gaming);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.activity-time {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.activity-duration {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-gaming);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    letter-spacing: 0.05em;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+.dashboard-footer {
+    text-align: center;
+    padding-top: 1rem;
+    color: var(--text-muted);
+    font-family: var(--font-gaming);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    opacity: 0.6;
+}
+
+/* ==========================================================================
+   Responsive Viewport Scale adjustments
+   ========================================================================== */
+@media (max-width: 600px) {
+    body {
+        padding: 1.5rem 0.75rem;
+    }
+    .gx-title {
+        font-size: 1.5rem;
+    }
+    .tracker-section {
+        padding: 1.25rem;
+    }
+    .exercise-selector {
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+    .exercise-btn {
+        padding: 0.6rem;
+    }
+    .live-setup-guide {
+        width: calc(100% - 2rem);
+    }
+    .badge-pill span:not(.badge-label) {
+        font-size: 0.95rem;
+    }
+}
