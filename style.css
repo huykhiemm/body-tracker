@@ -27,7 +27,7 @@
     --error: #ff1a40;
     
     --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-gaming: 'Orbitron', 'Outfit', sans-serif;
+    --font-gaming: 'Outfit', -apple-system, sans-serif;
     
     --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.6);
     --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.8);
@@ -1445,6 +1445,145 @@ body {
 }
 
 /* ==========================================================================
+   Liquid Glass Morphing Background Blobs
+   ========================================================================== */
+.liquid-blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: -2;
+    pointer-events: none;
+    opacity: 0.1;
+    animation: morph-blob 22s infinite alternate ease-in-out;
+}
+.blob-red {
+    width: 480px;
+    height: 480px;
+    background: radial-gradient(circle, rgba(255, 26, 64, 0.45) 0%, rgba(255, 26, 64, 0) 70%);
+    top: -120px;
+    right: -120px;
+    animation-duration: 25s;
+}
+.blob-cyan {
+    width: 520px;
+    height: 520px;
+    background: radial-gradient(circle, rgba(0, 240, 255, 0.35) 0%, rgba(0, 240, 255, 0) 70%);
+    bottom: -150px;
+    left: -150px;
+    animation-duration: 28s;
+}
+.blob-purple {
+    width: 420px;
+    height: 420px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, rgba(168, 85, 247, 0) 70%);
+    top: 35%;
+    left: 20%;
+    animation-duration: 20s;
+}
+@keyframes morph-blob {
+    0% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    }
+    50% {
+        transform: translate(40px, -60px) scale(1.15) rotate(180deg);
+        border-radius: 65% 35% 55% 45% / 45% 65% 35% 55%;
+    }
+    100% {
+        transform: translate(-20px, 40px) scale(0.9) rotate(360deg);
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    }
+}
+
+/* ==========================================================================
+   Liquid Glass Glassmorphism Overrides (frosted with glass sat blur)
+   ========================================================================== */
+.tracker-section, 
+.metric-card, 
+.activity-item, 
+.boss-hud-overlay, 
+.live-setup-guide, 
+.zoom-control-pill, 
+.badge-pill,
+.weight-selector-widget,
+.victory-banner {
+    background: rgba(10, 10, 14, 0.58) !important;
+    backdrop-filter: blur(25px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(140%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.55), 
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ==========================================================================
+   Dumbbell Weight Selector Widget Styles
+   ========================================================================== */
+.weight-selector-widget {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.8rem;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    width: 250px;
+    pointer-events: auto;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.weight-selector-widget.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.weight-label {
+    font-family: var(--font-gaming);
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--cyan-highlight);
+    text-transform: uppercase;
+    text-shadow: 0 0 5px rgba(0, 240, 255, 0.3);
+}
+
+.weight-options {
+    display: flex;
+    gap: 0.35rem;
+    width: 100%;
+}
+
+.weight-btn {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+    font-family: var(--font-gaming);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.35rem 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.weight-btn:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.weight-btn.active {
+    background: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px rgba(255, 26, 64, 0.4);
+}
+
+/* ==========================================================================
    Responsive Viewport Scale adjustments
    ========================================================================== */
 @media (max-width: 600px) {
@@ -1466,13 +1605,22 @@ body {
     }
     .live-setup-guide {
         width: calc(100% - 2rem);
-        bottom: 1rem !important;
-        top: auto !important;
+        bottom: auto !important;
+        top: 1rem !important; /* Move setup guide top-left to avoid blocking bottom controls on mobile */
+        left: 1rem;
     }
     .badge-pill span:not(.badge-label) {
         font-size: 0.95rem;
     }
     .boss-hud-overlay {
         width: calc(100% - 2rem);
+        top: 1rem !important;
+        left: 1rem;
+    }
+    .weight-selector-widget {
+        width: calc(100% - 2rem);
+        bottom: 4.5rem !important;
+        left: 1rem !important;
+        transform: none !important;
     }
 }

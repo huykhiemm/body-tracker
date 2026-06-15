@@ -6,16 +6,21 @@
     <meta name="description" content="Opera GX Styled real-time pose tracking fitness tracker. Count reps, check posture, and track sessions.">
     <title>GX Body Tracker // Pose Analyzer</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
-    <!-- Google Fonts: Orbitron for Sci-Fi Gaming aesthetic, Outfit for clean UI -->
+    <!-- Google Font: Outfit for a friendly, premium, and clean UI font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Chart.js CDN for Telemetry Graph -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Morphing Liquid Glass Background Blobs -->
+    <div class="liquid-blob blob-red"></div>
+    <div class="liquid-blob blob-cyan"></div>
+    <div class="liquid-blob blob-purple"></div>
+
     <div class="dashboard-container">
         <!-- Header styled like a gaming UI top-bar -->
         <header class="dashboard-header">
@@ -118,21 +123,33 @@
                     <div class="boss-hud-overlay" id="bossHud">
                         <div class="boss-brief">
                             <select id="bossSelect" class="boss-dropdown">
-                                <option value="0">Holo Bat 🦇 (6 HP)</option>
-                                <option value="1" selected>Cyber Slime 💧 (12 HP)</option>
-                                <option value="2">Robo Goblin 🤖 (25 HP)</option>
-                                <option value="3">Void Dragon 🐉 (60 HP)</option>
-                                <option value="4">Cyber Golem 🪨 (90 HP)</option>
-                                <option value="5">Omega Mech ⚔️ (130 HP)</option>
-                                <option value="6">Singularity Beast 👾 (200 HP)</option>
+                                <option value="0">Holo Bat 🦇 (30 HP)</option>
+                                <option value="1" selected>Cyber Slime 💧 (60 HP)</option>
+                                <option value="2">Robo Goblin 🤖 (120 HP)</option>
+                                <option value="3">Void Dragon 🐉 (250 HP)</option>
+                                <option value="4">Cyber Golem 🪨 (400 HP)</option>
+                                <option value="5">Omega Mech ⚔️ (600 HP)</option>
+                                <option value="6">Singularity Beast 👾 (1000 HP)</option>
                             </select>
-                            <div class="boss-hp-numerical"><span id="bossHpVal">12</span>/<span id="bossMaxHpVal">12</span> HP</div>
+                            <div class="boss-hp-numerical"><span id="bossHpVal">60</span>/<span id="bossMaxHpVal">60</span> HP</div>
                         </div>
                         <div class="boss-profile">
                             <div class="boss-avatar" id="bossAvatar">💧</div>
                             <div class="boss-hp-container">
                                 <div class="boss-hp-fill" id="bossHpFill"></div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Dumbbell Weight Selector (Bicep Curl Mode Only) -->
+                    <div class="weight-selector-widget" id="weightWidget">
+                        <span class="weight-label">⚔️ DUMBBELL WEIGHT (DMG SCALE)</span>
+                        <div class="weight-options">
+                            <button class="weight-btn" data-weight="2">2KG</button>
+                            <button class="weight-btn active" data-weight="5">5KG</button>
+                            <button class="weight-btn" data-weight="10">10KG</button>
+                            <button class="weight-btn" data-weight="15">15KG</button>
+                            <button class="weight-btn" data-weight="20">20KG</button>
                         </div>
                     </div>
 

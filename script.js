@@ -193,19 +193,20 @@ let formFeedback = {
 
 // RPG Mode Questline state database
 const BOSS_LIST = [
-    { name: "Holo Bat 🦇", maxHp: 6, avatar: "🦇" },
-    { name: "Cyber Slime 💧", maxHp: 12, avatar: "💧" },
-    { name: "Robo Goblin 🤖", maxHp: 25, avatar: "🤖" },
-    { name: "Void Dragon 🐉", maxHp: 60, avatar: "🐉" },
-    { name: "Cyber Golem 🪨", maxHp: 90, avatar: "🪨" },
-    { name: "Omega Mech ⚔️", maxHp: 130, avatar: "⚔️" },
-    { name: "Singularity Beast 👾", maxHp: 200, avatar: "👾" }
+    { name: "Holo Bat 🦇", maxHp: 30, avatar: "🦇" },
+    { name: "Cyber Slime 💧", maxHp: 60, avatar: "💧" },
+    { name: "Robo Goblin 🤖", maxHp: 120, avatar: "🤖" },
+    { name: "Void Dragon 🐉", maxHp: 250, avatar: "🐉" },
+    { name: "Cyber Golem 🪨", maxHp: 400, avatar: "🪨" },
+    { name: "Omega Mech ⚔️", maxHp: 600, avatar: "⚔️" },
+    { name: "Singularity Beast 👾", maxHp: 1000, avatar: "👾" }
 ];
 
 let rpgModeActive = false;
 let currentBossIndex = 1; // Default: Cyber Slime
 let bossHp = BOSS_LIST[currentBossIndex].maxHp;
 let todaySecondsOffset = 0;
+let selectedDumbbellWeight = 5; // Default bicep damage selector
 
 // ==========================================================================
 // Section 5 – Timer & Tracker Helpers
@@ -288,6 +289,17 @@ function switchMode(mode) {
     document.querySelectorAll('.exercise-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.mode === mode);
     });
+    
+    // Show dumbbell weight selector widget only on Bicep Curl mode
+    const weightWidget = document.getElementById('weightWidget');
+    if (weightWidget) {
+        if (mode === 'bicep') {
+            weightWidget.classList.add('show');
+        } else {
+            weightWidget.classList.remove('show');
+        }
+    }
+    
     updateGuide(mode);
     resetTracker();
 }
@@ -864,7 +876,7 @@ function processPushUp(landmarks) {
         pushupCount++;
         repCountEl.textContent = `${pushupCount} reps`;
         flashRepBadge();
-        triggerAttack(3); // Heavy Attack
+        triggerAttack(12); // Heavy Attack (Balanced)
     }
 }
 
@@ -942,7 +954,7 @@ function processPlank(landmarks) {
             if (plankHoldSec > bestPlankSec) bestPlankSec = plankHoldSec;
             repCountEl.textContent = `${plankHoldSec}s hold`;
             flashRepBadge();
-            triggerAttack(1); // DoT Attack
+            triggerAttack(2); // DoT Attack (Balanced)
         }, 1000);
     } else if (!inPosition && plankActive) {
         plankActive = false;
@@ -1019,51 +1031,25 @@ function processBicepCurl(landmarks) {
     const nowMs = performance.now();
 
     if (smoothedPct > 70) {
-        // Arm is contracted (at the top of the curl)
-        if (bicepHoldStart === null) {
-            bicepHoldStart = nowMs;
-            bicepHoldValid = false;
-            powerFillEl.classList.add('holding');
-        }
-
-        const elapsed = nowMs - bicepHoldStart;
-        bicepHoldProgress = Math.min(1, elapsed / BICEP_HOLD_MS);
-
-        if (elapsed >= BICEP_HOLD_MS) {
-            if (!bicepHoldValid) {
-                bicepHoldValid = true;
-                stage = 'down'; // Ready to count on return to extended
-            }
-            powerPercentEl.textContent = '✓ GIỮ!';
-            formFeedback.isValid = true;
-            formFeedback.message = "✓ GIỮ TỐT / GOOD HOLD!";
-        } else {
-            const remaining = ((BICEP_HOLD_MS - elapsed) / 1000).toFixed(1);
-            powerPercentEl.textContent = `${remaining}s`;
-            formFeedback.isValid = true;
-            formFeedback.message = `GIỮ: ${remaining}s`;
-        }
-
-    } else {
-        // Arm is not contracted
-        bicepHoldStart = null;
-        bicepHoldProgress = 0;
-        powerFillEl.classList.remove('holding');
+        stage = 'down';
         powerPercentEl.textContent = `${display}%`;
-
+        formFeedback.isValid = true;
+        formFeedback.message = "GẬP HẾT CỠ / CONTRACTED";
+    } else {
+        powerPercentEl.textContent = `${display}%`;
         if (smoothedPct < 15) {
             formFeedback.isValid = true;
             formFeedback.message = "✓ THẲNG TAY / EXTENDED";
 
-            if (stage === 'down' && bicepHoldValid) {
-                // Completed curl -> hold -> extension cycle
+            if (stage === 'down') {
                 pushupCount++;
                 repCountEl.textContent = `${pushupCount} reps`;
                 flashRepBadge();
-                triggerAttack(1); // Normal Attack
+                
+                // Attack with selected dumbbell weight scale damage
+                triggerAttack(selectedDumbbellWeight);
+                stage = 'up';
             }
-            bicepHoldValid = false;
-            stage = 'up';
         } else {
             formFeedback.isValid = true;
             formFeedback.message = stage === 'down' ? "HẠ TẠ XUỐNG / LOWER WEIGHT" : "GẬP TAY LÊN / CURL UP";
@@ -1241,6 +1227,78 @@ if (zoomBtns && viewport) {
 }
 
 // ==========================================================================
+// Section 18 – Liquid Ambient Particle Background (Optimized)
+// ==========================================================================
+function initAmbientBackground() {
+    const canvas = document.getElementById('bg-particles');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+    
+    // Resize handler with debounce
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+        }, 150);
+    });
+    
+    const particles = [];
+    const colors = ['#ff1a40', '#00f0ff', '#a855f7'];
+    
+    // Create ~35 slow moving particles
+    for (let i = 0; i < 35; i++) {
+        particles.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            vx: (Math.random() - 0.5) * 0.25,
+            vy: (Math.random() - 0.5) * 0.25,
+            radius: Math.random() * 4 + 2,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            alpha: Math.random() * 0.35 + 0.1
+        });
+    }
+    
+    function animate() {
+        ctx.clearRect(0, 0, w, h);
+        
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            
+            // Screen boundaries wrapping
+            if (p.x < 0) p.x = w;
+            if (p.x > w) p.x = 0;
+            if (p.y < 0) p.y = h;
+            if (p.y > h) p.y = 0;
+            
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
+            
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+        
+        requestAnimationFrame(animate);
+    }
+    
+    animate();
+}
+
+// Initialise background loop
+initAmbientBackground();
+
+// ==========================================================================
 // Section 16 – RPG Boss Battle Questline Mechanics
 // ==========================================================================
 function updateBossHpBar() {
@@ -1360,6 +1418,18 @@ if (bossSelect) {
         bossHp = boss.maxHp;
         if (bossAvatar) bossAvatar.textContent = boss.avatar;
         updateBossHpBar();
+    });
+}
+
+// Bicep Dumbbell Weight selector click listeners
+const weightBtns = document.querySelectorAll('.weight-btn');
+if (weightBtns) {
+    weightBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            weightBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedDumbbellWeight = parseInt(btn.dataset.weight) || 5;
+        });
     });
 }
 
